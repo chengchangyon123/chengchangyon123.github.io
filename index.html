@@ -3,132 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的个人主页</title>
+    <title>设计师 AI - 室内·建筑·景观设计智能助手</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: "Microsoft YaHei", sans-serif;
-            background-image: url("https://picsum.photos/id/1069/1920/1080");
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            color: #333;
-        }
-
-        /* 导航栏 */
-        nav {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 15px 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            position: fixed;
-            top: 0;
-            width: 100%;
-            z-index: 999;
-        }
-
-        .nav-container {
-            max-width: 1000px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            font-size: 20px;
-            font-weight: bold;
-            color: #2c3e50;
-        }
-
-        .nav-links a {
-            margin-left: 20px;
-            text-decoration: none;
-            color: #34495e;
-            font-weight: 500;
-        }
-
-        /* 主页卡片 */
-        .container {
-            max-width: 700px;
-            margin: 120px auto 50px;
-            background: rgba(255, 255, 255, 0.95);
-            padding: 50px;
-            border-radius: 20px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-        }
-
-        /* 头像 */
-        .avatar img {
-            width: 140px;
-            height: 140px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 5px solid white;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-
-        h1 {
-            font-size: 32px;
-            margin-bottom: 10px;
-            color: #2c3e50;
-        }
-
-        .desc {
-            font-size: 18px;
-            color: #7f8c8d;
-            margin-bottom: 30px;
-        }
-
-        /* 联系方式 */
-        .contact {
-            margin-top: 30px;
-            font-size: 16px;
-            color: #34495e;
-        }
-
-        .contact p {
-            margin: 8px 0;
-        }
+        *{margin:0;padding:0;box-sizing:border-box;font-family:"Microsoft YaHei",sans-serif}
+        body{background:#f5f7fa;color:#333}
+        .header{position:fixed;top:0;left:0;width:100%;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,0.05);padding:14px 20px;display:flex;justify-content:space-between;align-items:center;z-index:999}
+        .logo{font-size:22px;font-weight:700;color:#2d6df6}
+        .user{display:flex;align-items:center;gap:12px}
+        .vip{background:#2d6df6;color:#fff;padding:6px 12px;border-radius:20px;font-size:14px}
+        .container{max-width:900px;margin:90px auto 40px;padding:0 20px}
+        .chat-box{background:#fff;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.05);height:600px;display:flex;flex-direction:column}
+        .chat-body{flex:1;padding:20px;overflow-y:auto}
+        .msg{margin-bottom:16px;max-width:80%}
+        .msg-bot{background:#f0f4ff;border-radius:14px;padding:12px 16px;align-self:flex-start}
+        .msg-user{background:#2d6df6;color:#fff;border-radius:14px;padding:12px 16px;align-self:flex-end;margin-left:auto}
+        .chat-input{display:flex;padding:16px;border-top:1px solid #eee}
+        input{flex:1;border:1px solid #ddd;border-radius:30px;padding:14px 20px;outline:0;font-size:15px}
+        button{margin-left:10px;background:#2d6df6;color:#fff;border:none;border-radius:30px;padding:14px 24px;font-weight:500;cursor:pointer}
+        .price-box{margin-top:20px;display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+        .price{background:#fff;padding:16px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+        .price h3{margin-bottom:8px;color:#2d6df6}
+        .price p{font-size:14px;color:#666}
     </style>
 </head>
-
 <body>
-    <!-- 导航栏 -->
-    <nav>
-        <div class="nav-container">
-            <div class="logo">我的个人主页</div>
-            <div class="nav-links">
-                <a href="#">首页</a>
-                <a href="#">项目</a>
-                <a href="#">博客</a>
-                <a href="#">联系我</a>
-            </div>
-        </div>
-    </nav>
-
-    <!-- 主体内容 -->
-    <div class="container">
-        <!-- 头像 -->
-        <div class="avatar">
-            <img src="https://picsum.photos/id/237/200/200" alt="https://github.com/chengchangyon123/chengchangyon123.github.io/blob/main/0001.jpg?raw=true">
-        </div>
-
-        <h1>设计师 AI</h1>
-        <p class="desc">AI 辅助设计激发您的创作灵感</p>
-
-        <!-- 联系方式 -->
-        <div class="contact">
-            <p>📩 邮箱：109571855@qq.com</p>
-            <p>📱 微信：2741774946</p>
-            <p>🌍 GitHub：github.com/chengchangyon123</p>
+    <div class="header">
+        <div class="logo">设计师 AI</div>
+        <div class="user">
+            <div>余额：100积分</div>
+            <div class="vip">开通会员</div>
         </div>
     </div>
+
+    <div class="container">
+        <div class="chat-box">
+            <div class="chat-body" id="chat">
+                <div class="msg msg-bot">你好！我是「设计师 AI」，支持室内设计、建筑设计、景观设计全领域咨询，随时可以问我！</div>
+            </div>
+            <div class="chat-input">
+                <input type="text" id="input" placeholder="请输入你的设计需求...">
+                <button onclick="send()">发送</button>
+            </div>
+        </div>
+
+        <div class="price-box">
+            <div class="price">
+                <h3>💰 充积分</h3>
+                <p>1元=10积分，按次扣费</p>
+            </div>
+            <div class="price">
+                <h3>📅 月会员</h3>
+                <p>98元/月，无限使用</p>
+            </div>
+            <div class="price">
+                <h3>🎁 年会员</h3>
+                <p>898元/年，省278元</p>
+            </div>
+            <div class="price">
+                <h3>🏢 企业版</h3>
+                <p>3980元/年，多账号使用</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function send(){
+            let i=document.getElementById("input");
+            let t=document.getElementById("chat");
+            if(!i.value)return;
+            t.innerHTML+='<div class="msg msg-user">'+i.value+'</div>';
+            t.innerHTML+='<div class="msg msg-bot">思考中...</div>';
+            i.value="";t.scrollTop=t.scrollHeight;
+        }
+    </script>
 </body>
 </html>
