@@ -3,78 +3,188 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>设计师 AI - 室内·建筑·景观设计智能助手</title>
+    <title>AI 建筑设计工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        *{margin:0;padding:0;box-sizing:border-box;font-family:"Microsoft YaHei",sans-serif}
-        body{background:#f5f7fa;color:#333}
-        .header{position:fixed;top:0;left:0;width:100%;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,0.05);padding:14px 20px;display:flex;justify-content:space-between;align-items:center;z-index:999}
-        .logo{font-size:22px;font-weight:700;color:#2d6df6}
-        .user{display:flex;align-items:center;gap:12px}
-        .vip{background:#2d6df6;color:#fff;padding:6px 12px;border-radius:20px;font-size:14px}
-        .container{max-width:900px;margin:90px auto 40px;padding:0 20px}
-        .chat-box{background:#fff;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.05);height:600px;display:flex;flex-direction:column}
-        .chat-body{flex:1;padding:20px;overflow-y:auto}
-        .msg{margin-bottom:16px;max-width:80%}
-        .msg-bot{background:#f0f4ff;border-radius:14px;padding:12px 16px;align-self:flex-start}
-        .msg-user{background:#2d6df6;color:#fff;border-radius:14px;padding:12px 16px;align-self:flex-end;margin-left:auto}
-        .chat-input{display:flex;padding:16px;border-top:1px solid #eee}
-        input{flex:1;border:1px solid #ddd;border-radius:30px;padding:14px 20px;outline:0;font-size:15px}
-        button{margin-left:10px;background:#2d6df6;color:#fff;border:none;border-radius:30px;padding:14px 24px;font-weight:500;cursor:pointer}
-        .price-box{margin-top:20px;display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
-        .price{background:#fff;padding:16px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
-        .price h3{margin-bottom:8px;color:#2d6df6}
-        .price p{font-size:14px;color:#666}
+        body {
+            background-color: #0f1117;
+            color: #e2e8f0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .panel-hover {
+            transition: all 0.2s ease;
+        }
+        .panel-hover:hover {
+            border-color: #4b5563;
+        }
     </style>
 </head>
-<body>
-    <div class="header">
-        <div class="logo">设计师 AI</div>
-        <div class="user">
-            <div>余额：100积分</div>
-            <div class="vip">开通会员</div>
+<body class="h-screen flex flex-col overflow-hidden">
+    <!-- 顶部导航栏 -->
+    <header class="h-12 flex items-center justify-between px-4 border-b border-gray-800 bg-[#12141a]">
+        <div class="flex items-center gap-2">
+            <button class="p-2 rounded hover:bg-gray-800">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+            </button>
+            <span class="text-sm text-gray-400">返回我的资产</span>
         </div>
-    </div>
-
-    <div class="container">
-        <div class="chat-box">
-            <div class="chat-body" id="chat">
-                <div class="msg msg-bot">你好！我是「设计师 AI」，支持室内设计、建筑设计、景观设计全领域咨询，随时可以问我！</div>
+        <div class="flex items-center gap-4">
+            <button class="text-sm px-3 py-1 rounded hover:bg-gray-800">邀请好友</button>
+            <button class="text-sm px-3 py-1 rounded hover:bg-gray-800">文档教程</button>
+            <div class="relative group">
+                <button class="text-sm px-3 py-1 rounded bg-gray-800 hover:bg-gray-700 flex items-center gap-1">
+                    <span>积分: 2870</span>
+                </button>
+                <!-- 隐藏的充值/收费下拉菜单 -->
+                <div class="absolute right-0 top-full mt-2 w-48 bg-[#1e212b] rounded shadow-lg border border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                    <div class="p-3 border-b border-gray-700">
+                        <p class="text-xs text-gray-400">当前积分: 2870</p>
+                    </div>
+                    <button class="w-full text-left px-3 py-2 text-sm hover:bg-gray-800">充值积分</button>
+                    <button class="w-full text-left px-3 py-2 text-sm hover:bg-gray-800">收费标准</button>
+                </div>
             </div>
-            <div class="chat-input">
-                <input type="text" id="input" placeholder="请输入你的设计需求...">
-                <button onclick="send()">发送</button>
+            <button class="p-2 rounded hover:bg-gray-800">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16l4-4-4-4m4 8l4-4-4-4"></path>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="flex-1 flex overflow-hidden">
+        <!-- 左侧操作区 -->
+        <section class="w-[45%] h-full flex flex-col p-4 border-r border-gray-800">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs text-gray-400">UPLOADED IMAGES ... /10</span>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-gray-400">Ctrl ⌘</span>
+                    <button class="text-xs px-2 py-0.5 rounded hover:bg-gray-800">多选</button>
+                </div>
+            </div>
+            <div class="flex-1 border-2 border-dashed border-gray-700 rounded-lg p-2 relative panel-hover overflow-hidden">
+                <!-- 示例图片 -->
+                <img src="https://picsum.photos/seed/building/800/1000" class="w-full h-full object-cover rounded" alt="上传的建筑图">
+                <button class="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center hover:bg-gray-700">
+                    <span class="text-xl">+</span>
+                </button>
+            </div>
+            <!-- 左侧功能修改按钮（可折叠） -->
+            <div class="mt-4">
+                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm">修改功能面板</button>
+            </div>
+        </section>
+
+        <!-- 中间生成结果区 -->
+        <section class="flex-1 h-full p-4 overflow-y-auto scrollbar-hide">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs text-gray-400">GENERATED RESULTS</span>
+                <div class="flex gap-2">
+                    <button class="text-xs px-2 py-0.5 rounded bg-gray-700">全部</button>
+                    <button class="text-xs px-2 py-0.5 rounded hover:bg-gray-800">图片</button>
+                    <button class="text-xs px-2 py-0.5 rounded hover:bg-gray-800">视频</button>
+                </div>
+            </div>
+            <div class="grid grid-cols-3 gap-4">
+                <!-- 生成结果示例 -->
+                <div class="aspect-[4/3] bg-gray-800 rounded overflow-hidden panel-hover">
+                    <img src="https://picsum.photos/seed/result1/400/300" class="w-full h-full object-cover" alt="生成结果1">
+                </div>
+                <div class="aspect-[4/3] bg-gray-800 rounded overflow-hidden panel-hover">
+                    <img src="https://picsum.photos/seed/result2/400/300" class="w-full h-full object-cover" alt="生成结果2">
+                </div>
+                <div class="aspect-[4/3] bg-gray-800 rounded overflow-hidden panel-hover">
+                    <img src="https://picsum.photos/seed/result3/400/300" class="w-full h-full object-cover" alt="生成结果3">
+                </div>
+                <div class="aspect-[4/3] bg-gray-800 rounded overflow-hidden panel-hover">
+                    <img src="https://picsum.photos/seed/result4/400/300" class="w-full h-full object-cover" alt="生成结果4">
+                </div>
+                <div class="aspect-[4/3] bg-gray-800 rounded overflow-hidden panel-hover">
+                    <img src="https://picsum.photos/seed/result5/400/300" class="w-full h-full object-cover" alt="生成结果5">
+                </div>
+                <div class="aspect-[4/3] bg-gray-800 rounded overflow-hidden panel-hover">
+                    <img src="https://picsum.photos/seed/result6/400/300" class="w-full h-full object-cover" alt="生成结果6">
+                </div>
+                <div class="aspect-[4/3] bg-gray-800 rounded overflow-hidden panel-hover">
+                    <img src="https://picsum.photos/seed/result7/400/300" class="w-full h-full object-cover" alt="生成结果7">
+                </div>
+                <div class="aspect-[4/3] bg-gray-800 rounded overflow-hidden panel-hover">
+                    <img src="https://picsum.photos/seed/result8/400/300" class="w-full h-full object-cover" alt="生成结果8">
+                </div>
+                <div class="aspect-[4/3] bg-gray-800 rounded overflow-hidden panel-hover">
+                    <img src="https://picsum.photos/seed/result9/400/300" class="w-full h-full object-cover" alt="生成结果9">
+                </div>
+            </div>
+        </section>
+
+        <!-- 右侧预设面板 -->
+        <aside class="w-64 h-full bg-[#12141a] border-l border-gray-800 p-4 overflow-y-auto scrollbar-hide">
+            <div class="mb-4">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-medium">项目名称</span>
+                    <button class="text-xs text-gray-400 hover:text-white">编辑</button>
+                </div>
+                <div class="bg-gray-800 rounded px-3 py-2 text-sm">项目-20260323-182141</div>
+            </div>
+            <div class="mb-4">
+                <p class="text-xs text-gray-400 mb-2">预设动作</p>
+                <div class="flex gap-2 mb-2">
+                    <button class="flex-1 py-1 text-sm bg-gray-700 rounded">室内设计</button>
+                    <button class="flex-1 py-1 text-sm bg-gray-800 rounded hover:bg-gray-700">建筑设计</button>
+                </div>
+                <p class="text-xs text-gray-400">作用对象: 整个项目 &nbsp; 点击照片显示操作</p>
+            </div>
+            <div class="space-y-2">
+                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm text-left px-3">超级融合</button>
+                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm text-left px-3">平面布局</button>
+                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm text-left px-3">空间分镜</button>
+                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm text-left px-3">SU转效果图</button>
+                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm text-left px-3">空间爆炸</button>
+                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm text-left px-3">材料排版</button>
+                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm text-left px-3">一键彩平</button>
+                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm text-left px-3">景观彩平</button>
+                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm text-left px-3">灯光氛围</button>
+                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm text-left px-3">通道转换</button>
+                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm text-left px-3">彩平转轴测图</button>
+            </div>
+        </aside>
+    </main>
+
+    <!-- 底部提示词输入栏 -->
+    <footer class="h-16 border-t border-gray-800 bg-[#12141a] flex items-center px-4 gap-4">
+        <div class="flex-1 relative">
+            <input type="text" placeholder="描述你的创意灵感..." class="w-full bg-[#1e212b] rounded px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-600">
+        </div>
+        <div class="flex items-center gap-2">
+            <button class="p-2 rounded hover:bg-gray-800">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </button>
+            <div class="flex items-center gap-1 text-xs">
+                <button class="px-2 py-1 rounded bg-gray-700">质量</button>
+                <button class="px-2 py-1 rounded hover:bg-gray-800">极速</button>
+                <button class="px-2 py-1 rounded bg-gray-700">画质</button>
+                <button class="px-2 py-1 rounded hover:bg-gray-800">画幅 Auto</button>
+                <button class="px-2 py-1 rounded hover:bg-gray-800">分辨率 1K</button>
+            </div>
+            <div class="flex items-center gap-2">
+                <button class="px-3 py-1 rounded bg-gray-800 hover:bg-gray-700 text-sm">批量 3张</button>
+                <button class="px-4 py-1 rounded bg-blue-600 hover:bg-blue-500 text-sm flex items-center gap-1">
+                    生成 <span class="text-xs">+6</span>
+                </button>
             </div>
         </div>
-
-        <div class="price-box">
-            <div class="price">
-                <h3>💰 充积分</h3>
-                <p>1元=10积分，按次扣费</p>
-            </div>
-            <div class="price">
-                <h3>📅 月会员</h3>
-                <p>98元/月，无限使用</p>
-            </div>
-            <div class="price">
-                <h3>🎁 年会员</h3>
-                <p>898元/年，省278元</p>
-            </div>
-            <div class="price">
-                <h3>🏢 企业版</h3>
-                <p>3980元/年，多账号使用</p>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        function send(){
-            let i=document.getElementById("input");
-            let t=document.getElementById("chat");
-            if(!i.value)return;
-            t.innerHTML+='<div class="msg msg-user">'+i.value+'</div>';
-            t.innerHTML+='<div class="msg msg-bot">思考中...</div>';
-            i.value="";t.scrollTop=t.scrollHeight;
-        }
-    </script>
+    </footer>
 </body>
 </html>
