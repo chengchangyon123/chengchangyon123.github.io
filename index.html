@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 设计工具</title>
+    <title>AI设计工具 - 完整版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* 原有基础样式 */
         body {
             background-color: #0f1117;
             color: #e2e8f0;
@@ -16,430 +17,88 @@
         .panel-hover { transition: all 0.2s ease; }
         .panel-hover:hover { border-color: #4b5563; }
 
-        /* 拖拽分割条样式 */
-        .gutter {
-            background-color: #1e212b;
-            cursor: col-resize;
-            width: 6px;
-            margin: 0 -3px;
-            border-left: 1px solid #374151;
-            border-right: 1px solid #374151;
-            position: relative;
-            z-index: 10;
-            transition: background 0.2s;
+        /* 新增：拖拽/粘贴 + 双击最大化样式 */
+        .operate-area-drag-over {
+            border-color: #3b82f6 !important;
+            background: rgba(59, 130, 246, 0.1) !important;
         }
-        .gutter:hover { background-color: #4b5563; }
-        .gutter::after {
-            content: "||";
+        .img-maximize-mask {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .maximize-img-container {
+            position: relative;
+            max-width: 90%;
+            max-height: 90%;
+        }
+        .maximize-img {
+            width: auto;
+            height: auto;
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 4px;
+        }
+        .paste-tip {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 10px;
-            color: #6b7280;
-            letter-spacing: 1px;
-        }
-
-        /* 新增样式 */
-        /* 图片预览模态框 */
-        .preview-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.9);
-            z-index: 100;
-            display: none;
-            flex-direction: column;
-            padding: 20px;
-        }
-        .preview-content {
-            flex: 1;
-            display: flex;
-            position: relative;
-        }
-        .preview-img {
-            max-width: 80%;
-            max-height: 80%;
-            margin: auto;
-            object-contain;
-        }
-        .preview-controls {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            gap: 10px;
-        }
-        .preview-control-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #1e212b;
-            border: 1px solid #374151;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .preview-control-btn:hover {
-            background: #4b5563;
-        }
-        .mask-color-picker {
-            position: absolute;
-            top: 50%;
-            left: 20px;
-            transform: translateY(-50%);
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .color-block {
-            width: 30px;
-            height: 30px;
-            border-radius: 4px;
-            cursor: pointer;
-            border: 2px solid transparent;
-        }
-        .color-block.active {
-            border-color: #ffffff;
-        }
-        .preview-edit-input {
-            width: 80%;
-            margin: 20px auto 0;
-            background: #1e212b;
-            border: 1px solid #374151;
-            border-radius: 4px;
-            padding: 10px;
-            color: #e2e8f0;
-        }
-        .lasso-tool {
-            position: absolute;
-            border: 1px dashed #ffffff;
-            background: rgba(255,255,255,0.1);
-            pointer-events: none;
-            display: none;
-        }
-
-        /* 操作区图片容器 */
-        .operate-images {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            height: 100%;
-            overflow-y: auto;
-        }
-        .operate-img-item {
-            position: relative;
-            aspect-ratio: 4/3;
-            border-radius: 4px;
-            overflow: hidden;
-            background: #1e212b;
-            cursor: move; /* 新增：拖拽光标 */
-        }
-        .operate-img-number {
-            position: absolute;
-            top: 4px;
-            left: 4px;
-            width: 20px;
-            height: 20px;
-            background: #0f1117;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: bold;
-            cursor: move;
-            z-index: 1;
-        }
-        .operate-img {
-            width: 100%;
-            height: 100%;
-            object-cover;
-        }
-
-        /* 生成结果区图片样式 */
-        .result-img-item {
-            position: relative;
-            cursor: move; /* 新增：拖拽光标 */
-            aspect-ratio: 4/3;
-            border-radius: 4px;
-            overflow: hidden;
-            background: #1e212b;
-        }
-        .result-img-controls {
-            position: absolute;
-            top: 4px;
-            right: 4px;
-            display: flex;
-            gap: 4px;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-        .result-img-item:hover .result-img-controls {
-            opacity: 1;
-        }
-        .result-img-btn {
-            width: 24px;
-            height: 24px;
-            border-radius: 4px;
-            background: #1e212b;
-            border: 1px solid #374151;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 12px;
-        }
-
-        /* 预设提示词弹窗 */
-        .prompt-presets {
-            position: absolute;
-            bottom: 100%;
-            right: 0;
-            width: 300px;
-            background: #1e212b;
-            border: 1px solid #374151;
-            border-radius: 4px;
-            padding: 10px;
-            display: none;
-            flex-direction: column;
-            gap: 8px;
-            z-index: 5;
-        }
-        .preset-item {
-            padding: 8px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .preset-item:hover {
-            background: #374151;
-        }
-        /* 预设按钮激活状态 */
-        .preset-btn.active {
-            background: #4b5563;
-        }
-
-        /* 历史记录界面 */
-        .history-interface {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #0f1117;
-            z-index: 200;
-            display: none;
-            flex-direction: column;
-            padding: 20px;
-        }
-        .history-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #374151;
-        }
-        .history-close {
-            padding: 8px 16px;
-            background: #4b5563;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .history-packages {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            overflow-y: auto;
-            flex: 1;
-        }
-        .history-package {
-            background: #1e212b;
-            border-radius: 8px;
-            padding: 16px;
-        }
-        .package-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        .package-date {
-            font-weight: bold;
-        }
-        .package-delete {
-            color: #ef4444;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        .package-images {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 8px;
-        }
-        .package-img-item {
-            position: relative;
-            aspect-ratio: 4/3;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        .package-img {
-            width: 100%;
-            height: 100%;
-            object-cover;
-        }
-        .package-img-delete {
-            position: absolute;
-            top: 4px;
-            right: 4px;
-            width: 20px;
-            height: 20px;
-            background: rgba(0,0,0,0.7);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 12px;
-            color: #ef4444;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-        .package-img-item:hover .package-img-delete {
-            opacity: 1;
-        }
-
-        /* 文字生图界面（创作风暴） */
-        .text2img-interface {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #0f1117;
-            z-index: 150;
-            display: none;
-            flex-direction: column;
-            padding: 20px;
-        }
-        .text2img-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #374151;
-        }
-        .text2img-close {
-            padding: 8px 16px;
-            background: #4b5563;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .text2img-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        /* 创作风暴主区域 */
-        .creation-storm-main {
-            flex: 1;
-            border: 2px dashed #374151;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             color: #9ca3af;
             font-size: 14px;
             text-align: center;
-            padding: 20px;
-            position: relative;
+            z-index: 1;
         }
-        .creation-storm-tips {
-            max-width: 600px;
-            line-height: 1.6;
-        }
-        /* 底部控制栏 */
-        .bottom-controls {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            background: #12141a;
-            padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 10px;
-        }
-        .control-group {
+
+        /* 图片位置编辑工具栏样式 */
+        .img-position-toolbar {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
             background: #1e212b;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            padding: 10px 20px;
+            display: none;
+            gap: 15px;
+            z-index: 100;
+        }
+        .position-btn {
             padding: 8px 12px;
-            border-radius: 4px;
-            min-width: 120px;
-        }
-        .control-group label {
-            font-size: 12px;
-            color: #9ca3af;
-            margin-right: 8px;
-        }
-        .control-group select {
             background: #0f1117;
             border: 1px solid #374151;
             border-radius: 4px;
-            padding: 4px 8px;
             color: #e2e8f0;
-            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
         }
-
-        /* 邀请码弹窗 */
-        .invite-modal {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #1e212b;
-            border: 1px solid #374151;
-            border-radius: 8px;
-            padding: 20px;
-            z-index: 200;
-            display: none;
-            min-width: 300px;
-        }
-        .invite-content {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        .invite-code {
-            padding: 10px;
-            background: #0f1117;
-            border-radius: 4px;
-            font-family: monospace;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .copy-btn {
-            padding: 4px 8px;
+        .position-btn:hover {
             background: #374151;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
         }
-        .invite-close {
-            align-self: flex-end;
-            padding: 8px 16px;
-            background: #4b5563;
+        .position-btn.active {
+            background: #3b82f6;
+            border-color: #3b82f6;
+        }
+        .position-input {
+            width: 60px;
+            background: #0f1117;
+            border: 1px solid #374151;
             border-radius: 4px;
-            cursor: pointer;
+            padding: 8px;
+            color: #e2e8f0;
+            text-align: center;
         }
 
-        /* 积分相关弹窗 */
-        .score-modal {
+        /* 图片添加弹窗样式 */
+        .add-img-modal {
             position: fixed;
             top: 50%;
             left: 50%;
@@ -448,85 +107,58 @@
             border: 1px solid #374151;
             border-radius: 8px;
             padding: 20px;
-            z-index: 200;
+            z-index: 300;
             display: none;
             min-width: 400px;
         }
-        .score-content {
+        .add-img-content {
             display: flex;
             flex-direction: column;
             gap: 15px;
         }
-        .score-close {
-            align-self: flex-end;
-            padding: 8px 16px;
-            background: #4b5563;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .recharge-link {
-            color: #3b82f6;
-            text-decoration: underline;
-            cursor: pointer;
-        }
-
-        /* 登录弹窗 */
-        .login-modal {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #1e212b;
-            border: 1px solid #374151;
-            border-radius: 8px;
-            padding: 25px;
-            z-index: 250;
-            display: none;
-            min-width: 400px;
-        }
-        .login-content {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        .login-tabs {
+        .add-img-tabs {
             display: flex;
             border-bottom: 1px solid #374151;
             padding-bottom: 10px;
             gap: 20px;
         }
-        .login-tab {
+        .add-img-tab {
             cursor: pointer;
             padding: 5px 0;
             font-weight: 500;
             color: #9ca3af;
         }
-        .login-tab.active {
+        .add-img-tab.active {
             color: #e2e8f0;
             border-bottom: 2px solid #3b82f6;
         }
-        .login-form, .register-form, .qrcode-login {
+        .add-img-upload, .add-img-url {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 10px;
         }
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
+        .upload-area {
+            border: 2px dashed #374151;
+            border-radius: 4px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
         }
-        .form-group label {
-            font-size: 14px;
-            color: #9ca3af;
+        .upload-area:hover {
+            border-color: #4b5563;
         }
-        .form-group input {
+        .upload-input {
+            display: none;
+        }
+        .add-img-input {
             background: #0f1117;
             border: 1px solid #374151;
             border-radius: 4px;
             padding: 10px;
             color: #e2e8f0;
         }
-        .form-btn {
+        .add-img-btn {
             background: #3b82f6;
             border: none;
             border-radius: 4px;
@@ -536,886 +168,425 @@
             cursor: pointer;
             transition: background 0.2s;
         }
-        .form-btn:hover {
+        .add-img-btn:hover {
             background: #2563eb;
         }
-        .form-switch {
-            text-align: center;
-            font-size: 13px;
-            color: #9ca3af;
-        }
-        .form-switch span {
-            color: #3b82f6;
-            cursor: pointer;
-            text-decoration: underline;
-        }
-        .qrcode-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-        }
-        .qrcode-img {
-            width: 200px;
-            height: 200px;
-            background: #0f1117;
+        .add-img-close {
+            align-self: flex-end;
+            padding: 8px 16px;
+            background: #4b5563;
             border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #9ca3af;
-        }
-        .login-close {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             cursor: pointer;
-            color: #9ca3af;
-        }
-
-        /* 新增：预设按钮高亮样式 */
-        .preset-function-btn {
-            transition: all 0.2s ease;
-        }
-        .preset-function-btn.active {
-            background: #3b82f6 !important;
-            color: #ffffff !important;
-        }
-
-        /* 新增：拖拽排序相关样式 */
-        .img-item-dragging {
-            opacity: 0.5;
-            border: 2px dashed #3b82f6;
-        }
-        .img-drop-placeholder {
-            background: rgba(59, 130, 246, 0.2);
-            border-radius: 4px;
-            aspect-ratio: 4/3;
         }
     </style>
 </head>
-<body class="h-screen flex flex-col overflow-hidden">
-    <!-- 顶部导航 -->
-    <header class="h-12 flex items-center justify-between px-4 border-b border-gray-800 bg-[#12141a]">
-        <div class="flex items-center gap-2">
-            <button class="p-2 rounded hover:bg-gray-800">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                </svg>
-            </button>
-            <span id="backToText2Img" class="text-sm text-gray-400 cursor-pointer font-medium">创作风暴</span>
+<body class="flex h-screen overflow-hidden">
+    <!-- 左侧操作区 -->
+    <div class="w-1/3 h-full border-r border-gray-800 flex flex-col panel-hover relative">
+        <div class="p-4 border-b border-gray-800 font-medium">操作区</div>
+        <div id="operateImagesContainer" class="flex-1 p-4 overflow-y-auto scrollbar-hide grid grid-cols-2 gap-2">
+            <!-- 图片会动态添加到这里 -->
         </div>
-        <div class="flex items-center gap-4">
-            <button id="inviteBtn" class="text-sm px-3 py-1 rounded hover:bg-gray-800">邀请加入</button>
-            <button id="resourceBtn" class="text-sm px-3 py-1 rounded hover:bg-gray-800">资源管理</button>
-            <!-- 新增登录按钮 -->
-            <button id="loginBtn" class="text-sm px-3 py-1 rounded hover:bg-gray-800">登录</button>
-            <div class="relative group">
-                <button id="scoreBtn" class="text-sm px-3 py-1 rounded bg-gray-800 hover:bg-gray-700 flex items-center gap-1">
-                    <span>积分</span> <!-- 移除积分数字 -->
-                </button>
-                <div class="absolute right-0 top-full mt-2 w-48 bg-[#1e212b] rounded shadow-lg border border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                    <div class="p-3 border-b border-gray-700">
-                        <p class="text-xs text-gray-400">当前积分</p> <!-- 移除积分数字 -->
-                    </div>
-                    <button id="rechargeBtn" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-800">充值积分</button>
-                    <button id="priceRuleBtn" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-800">收费标准</button>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- 主内容区 + 拖拽布局 -->
-    <main id="mainContainer" class="flex-1 flex overflow-hidden relative">
-        <!-- 左侧操作区 -->
-        <section id="leftPanel" class="h-full flex flex-col p-4 border-r border-gray-800" style="width:45%;min-width:300px;max-width:70%;">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-xs text-gray-400">操作区</span>
-            </div>
-            <div class="flex-1 border-2 border-dashed border-gray-700 rounded-lg p-2 relative panel-hover overflow-hidden">
-                <!-- 操作区图片容器 - 移除示例图片 -->
-                <div id="operateImagesContainer" class="operate-images"></div>
-                <button id="addImageBtn" class="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center hover:bg-gray-700">+</button>
-            </div>
-        </section>
-
-        <!-- 拖拽分割条 -->
-        <div id="dragGutter" class="gutter"></div>
-
-        <!-- 中间生成区 -->
-        <section id="rightPanel" class="flex-1 h-full p-4 overflow-y-auto scrollbar-hide">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-xs text-gray-400">生成结果区</span>
-            </div>
-            <!-- 生成结果区 - 移除示例图片 -->
-            <div id="resultImagesContainer" class="grid grid-cols-3 gap-4"></div>
-        </section>
-
-        <!-- 右侧预设区 - 移除室内设计/建筑设计按键 -->
-        <aside class="w-64 h-full bg-[#12141a] border-l border-gray-800 p-4 overflow-y-auto scrollbar-hide">
-            <div class="mb-4">
-                <span class="text-sm font-medium">右侧预设键</span>
-            </div>
-            <div class="space-y-2">
-                <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="超级融合效果，多图融合，自然过渡，高清细节">超级融合</button>
-                <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="平面布局设计，空间规划，合理分区，高清线稿">平面布局</button>
-                <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="空间分镜效果，多视角展示，沉浸式体验，光影层次">空间分镜</button>
-                <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="SU模型转效果图，真实材质，光影渲染，高清输出">SU转效果图</button>
-                <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="空间爆炸效果，分层展示，结构清晰，三维可视化">空间爆炸</button>
-                <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="材料排版设计，材质展示，色彩搭配，细节纹理">材料排版</button>
-                <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="一键彩平图，色彩鲜明，分区清晰，专业规范">一键彩平</button>
-                <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="景观彩平图，植物配置，地形规划，色彩协调">景观彩平</button>
-                <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="灯光氛围效果，光影渲染，氛围感拉满，真实质感">灯光氛围</button>
-                <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="通道转换效果，多通道分离，精准编辑，专业后期">通道转换</button>
-                <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="彩平转轴测图，三维转换，视角切换，专业制图">彩平转轴测图</button>
-                <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="软装分析图，家具布局，风格搭配，色彩协调">软装分析</button>
-                <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="地域分析图，文化元素，地域特色，空间融合">地域分析</button>
-                <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="概念推演效果，创意可视化，逐步呈现，逻辑清晰">概念推演</button>
-            </div>
-        </aside>
-    </main>
-
-    <!-- 底部控制栏 + 输入栏 -->
-    <footer class="border-t border-gray-800 bg-[#12141a] flex flex-col px-4 py-2">
-        <!-- 新增底部控制栏（质量、画幅、分辨率、批量） -->
-        <div class="bottom-controls" id="bottomControls">
-            <!-- 质量控制 -->
-            <div class="control-group">
-                <label>质量</label>
-                <select id="qualitySelect">
-                    <option value="standard">标准</option>
-                    <option value="high">高清</option>
-                    <option value="ultra">超清</option>
-                </select>
-            </div>
-            <!-- 画幅控制 - 取消汽车，新增指定比例 + Auto选项 -->
-            <div class="control-group">
-                <label>画幅</label>
-                <select id="aspectRatioSelect">
-                    <option value="auto">Auto</option>
-                    <option value="1:1">1:1</option>
-                    <option value="4:3">4:3</option>
-                    <option value="3:4">3:4</option>
-                    <option value="16:9">16:9</option>
-                    <option value="9:16">9:16</option>
-                    <option value="5:3">5:3</option>
-                    <option value="3:5">3:5</option>
-                    <option value="21:9">21:9</option>
-                </select>
-            </div>
-            <!-- 分辨率控制 -->
-            <div class="control-group">
-                <label>分辨率</label>
-                <select id="resolutionSelect">
-                    <option value="1k">1K</option>
-                    <option value="2k">2K</option>
-                    <option value="4k">4K</option>
-                </select>
-            </div>
-            <!-- 批量控制 -->
-            <div class="control-group">
-                <label>批量</label>
-                <select id="batchSelect">
-                    <option value="1">1张</option>
-                    <option value="3">3张</option>
-                    <option value="6">6张</option>
-                    <option value="9">9张</option>
-                </select>
-            </div>
-        </div>
-        
-        <!-- 提示词输入栏 -->
-        <div class="h-14 flex items-center gap-4">
-            <div class="flex-1 relative">
-                <input id="promptInput" type="text" placeholder="输入提示词..." class="w-full bg-[#1e212b] rounded px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-600">
-                <!-- 预设提示词弹窗 -->
-                <div id="promptPresets" class="prompt-presets">
-                    <div class="preset-item" data-prompt="现代简约风格，高清，自然光，建筑效果图">现代简约建筑效果图</div>
-                    <div class="preset-item" data-prompt="新中式风格，园林景观，黄昏，细节丰富">新中式园林景观</div>
-                    <div class="preset-item" data-prompt="工业风，loft空间，金属质感，高对比度">工业风LOFT空间</div>
-                    <div class="preset-item" data-prompt="添加自定义预设" onclick="addCustomPreset()">+ 添加自定义预设</div>
-                </div>
-                <button id="presetBtn" class="preset-btn absolute right-2 top-1/2 transform -translate-y-1/2 bg-gray-700 rounded px-2 py-1 text-xs">预设</button>
-            </div>
-            <!-- 生成按钮 - 改为调整图片后生成新图片 -->
-            <button id="generateBtn" class="px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 text-sm">
-                生成 <span id="scoreConsume">(消耗: 50积分)</span>
-            </button>
-        </div>
-    </footer>
-
-    <!-- 图片预览修改模态框 -->
-    <div id="previewModal" class="preview-modal">
-        <div class="preview-content">
-            <div class="lasso-tool" id="lassoTool"></div>
-            <!-- 遮罩颜色选择 -->
-            <div class="mask-color-picker">
-                <div class="color-block active" style="background: red;" data-color="red"></div>
-                <div class="color-block" style="background: yellow;" data-color="yellow"></div>
-                <div class="color-block" style="background: green;" data-color="green"></div>
-                <div class="color-block" style="background: blue;" data-color="blue"></div>
-                <div class="color-block" style="background: white;" data-color="white"></div>
-            </div>
-            <img id="previewImage" class="preview-img" src="" alt="预览图片">
-            <!-- 预览控制按钮 -->
-            <div class="preview-controls">
-                <div class="preview-control-btn" id="compareBtn" title="原图/现图对比">↔</div>
-                <div class="preview-control-btn" id="downloadBtn" title="下载图片">↓</div>
-                <div class="preview-control-btn" id="deleteBtn" title="删除图片">×</div>
-                <div class="preview-control-btn" id="lassoBtn" title="套索工具">✎</div>
-                <div class="preview-control-btn" id="switchAreaBtn" title="切换到另一区域">↷</div>
-                <div class="preview-control-btn" id="closePreviewBtn" title="关闭预览">✕</div>
-            </div>
-        </div>
-        <input id="previewEditInput" class="preview-edit-input" placeholder="输入修改提示词...">
-        <button id="applyEditBtn" class="w-40 mx-auto mt-10 py-2 bg-blue-600 rounded hover:bg-blue-500 text-sm">应用修改</button>
-    </div>
-
-    <!-- 文字生图界面（创作风暴）- 按截图重构 -->
-    <div id="text2imgInterface" class="text2img-interface">
-        <div class="text2img-header">
-            <h2>创作风暴</h2>
-            <div class="text2img-close" id="closeText2ImgBtn">关闭</div>
-        </div>
-        <div class="text2img-content">
-            <!-- 创作风暴主区域 -->
-            <div class="creation-storm-main">
-                <div class="creation-storm-tips">
-                    <p>1.将图片从其它外部软件或平台拖入到此位置时界面自动切换到主界面的"操作区"进行图片编辑</p>
-                    <p>2.在没有任何图片拖入或加入时在下面提示词框内输入提示词会自动按提示词生成图片，同时生成的图片自动切换到主界面的"操作区"进行图片再编辑。</p>
-                </div>
-            </div>
-            
-            <!-- 底部控制栏 -->
-            <div class="bottom-controls">
-                <div class="control-group">
-                    <label>质量</label>
-                    <select id="text2imgQualitySelect">
-                        <option value="standard">标准</option>
-                        <option value="high">高清</option>
-                        <option value="ultra">超清</option>
-                    </select>
-                </div>
-                <div class="control-group">
-                    <label>画幅</label>
-                    <select id="text2imgAspectRatioSelect">
-                        <option value="auto">Auto</option>
-                        <option value="1:1">1:1</option>
-                        <option value="4:3">4:3</option>
-                        <option value="3:4">3:4</option>
-                        <option value="16:9">16:9</option>
-                        <option value="9:16">9:16</option>
-                        <option value="5:3">5:3</option>
-                        <option value="3:5">3:5</option>
-                        <option value="21:9">21:9</option>
-                    </select>
-                </div>
-                <div class="control-group">
-                    <label>分辨率</label>
-                    <select id="text2imgResolutionSelect">
-                        <option value="1k">1K</option>
-                        <option value="2k">2K</option>
-                        <option value="4k">4K</option>
-                    </select>
-                </div>
-                <div class="control-group">
-                    <label>批量</label>
-                    <select id="text2imgBatchSelect">
-                        <option value="1">1张</option>
-                        <option value="3">3张</option>
-                        <option value="6">6张</option>
-                        <option value="9">9张</option>
-                    </select>
-                </div>
-            </div>
-            
-            <!-- 提示词输入 -->
-            <div class="flex items-center gap-4">
-                <div class="flex-1 relative">
-                    <input id="text2imgPromptInput" type="text" placeholder="描述你的创意灵感..." class="w-full bg-[#1e212b] rounded px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-600">
-                    <button id="text2imgPresetBtn" class="preset-btn absolute right-2 top-1/2 transform -translate-y-1/2 bg-gray-700 rounded px-2 py-1 text-xs">预设</button>
-                </div>
-                <button id="text2imgGenerateBtn" class="px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 text-sm">
-                    生成 <span id="text2imgScoreConsume">(消耗: 50积分)</span>
-                </button>
-            </div>
-            
-            <!-- 文字生图结果区 -->
-            <div id="text2imgResult" class="text2img-result"></div>
+        <div class="p-4 border-t border-gray-800">
+            <button id="addImageBtn" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded">+ 添加图片</button>
         </div>
     </div>
 
-    <!-- 资源管理/历史记录界面 -->
-    <div id="historyInterface" class="history-interface">
-        <div class="history-header">
-            <h2>资源管理 - 历史记录</h2>
-            <div class="history-close" id="closeHistoryBtn">关闭</div>
-        </div>
-        <div id="historyPackages" class="history-packages">
-            <!-- 按24小时自动归纳的历史包示例 -->
-            <div class="history-package">
-                <div class="package-header">
-                    <div class="package-date">2024-05-20</div>
-                    <div class="package-delete" onclick="deletePackage(this)">删除整包</div>
-                </div>
-                <div class="package-images">
-                    <!-- 动态生成的历史图片 -->
-                </div>
+    <!-- 右侧结果区 -->
+    <div class="w-2/3 h-full flex flex-col">
+        <div class="p-4 border-b border-gray-800 font-medium">生成结果区</div>
+        <div id="resultImagesContainer" class="flex-1 p-4 overflow-y-auto scrollbar-hide grid grid-cols-3 gap-2">
+            <!-- 示例结果图 -->
+            <div class="result-img-item border border-gray-800 rounded overflow-hidden draggable" draggable="true">
+                <img src="https://picsum.photos/400/300?random=1" class="w-full h-auto" alt="示例图1">
             </div>
-            <div class="history-package">
-                <div class="package-header">
-                    <div class="package-date">2024-05-19</div>
-                    <div class="package-delete" onclick="deletePackage(this)">删除整包</div>
-                </div>
-                <div class="package-images">
-                    <!-- 动态生成的历史图片 -->
-                </div>
+            <div class="result-img-item border border-gray-800 rounded overflow-hidden draggable" draggable="true">
+                <img src="https://picsum.photos/400/300?random=2" class="w-full h-auto" alt="示例图2">
             </div>
         </div>
     </div>
 
-    <!-- 邀请加入弹窗 -->
-    <div id="inviteModal" class="invite-modal">
-        <div class="invite-content">
-            <h3>邀请加入</h3>
-            <div>邀请链接: <a href="https://example.com/invite" target="_blank" class="text-blue-500">https://example.com/invite</a></div>
-            <div class="invite-code">
-                邀请码: <span id="inviteCode">AI888-999-777</span>
-                <div class="copy-btn" onclick="copyInviteCode()">复制</div>
+    <!-- 新增：图片添加弹窗 -->
+    <div id="addImgModal" class="add-img-modal">
+        <div class="add-img-content">
+            <h3>添加图片</h3>
+            <div class="add-img-tabs">
+                <div class="add-img-tab active" data-tab="upload">本地上传</div>
+                <div class="add-img-tab" data-tab="url">图片链接</div>
             </div>
-            <button class="invite-close" id="closeInviteBtn">关闭</button>
+            <div class="add-img-upload" id="uploadTabContent">
+                <div class="upload-area" id="uploadArea">
+                    <p>点击或拖拽图片到此处上传</p>
+                    <p class="text-xs text-gray-400">支持JPG/PNG/WebP格式</p>
+                    <input type="file" class="upload-input" id="uploadInput" accept="image/*" multiple>
+                </div>
+                <button class="add-img-btn" id="confirmUploadBtn">确认添加到操作区</button>
+            </div>
+            <div class="add-img-url" id="urlTabContent" style="display: none;">
+                <input type="text" class="add-img-input" id="imgUrlInput" placeholder="请输入图片URL（如：https://xxx.jpg）">
+                <button class="add-img-btn" id="confirmUrlBtn">确认添加到操作区</button>
+            </div>
+            <button class="add-img-close" id="closeAddImgBtn">关闭</button>
         </div>
     </div>
 
-    <!-- 积分相关弹窗 -->
-    <div id="scoreModal" class="score-modal">
-        <div class="score-content" id="scoreModalContent">
-            <!-- 内容会动态切换 -->
-        </div>
-        <button class="score-close" id="closeScoreBtn">关闭</button>
+    <!-- 新增：图片位置编辑工具栏 -->
+    <div id="imgPositionToolbar" class="img-position-toolbar">
+        <button class="position-btn" id="moveUpBtn">上移</button>
+        <button class="position-btn" id="moveDownBtn">下移</button>
+        <button class="position-btn" id="moveToTopBtn">置顶</button>
+        <button class="position-btn" id="moveToBottomBtn">置底</button>
+        <span>移动到位置：</span>
+        <input type="number" class="position-input" id="targetPositionInput" min="1">
+        <button class="position-btn" id="moveToPositionBtn">确认</button>
+        <button class="position-btn" id="closePositionToolbarBtn">关闭</button>
     </div>
 
-    <!-- 登录弹窗 -->
-    <div id="loginModal" class="login-modal">
-        <div class="login-close" id="closeLoginBtn">×</div>
-        <div class="login-content">
-            <h3>用户登录</h3>
-            <div class="login-tabs">
-                <div class="login-tab active" data-tab="account">账号密码登录</div>
-                <div class="login-tab" data-tab="qrcode">二维码登录</div>
-            </div>
-            
-            <!-- 账号密码登录 -->
-            <div class="login-form" id="accountLoginForm">
-                <div class="form-group">
-                    <label>用户名</label>
-                    <input type="text" placeholder="请输入用户名">
-                </div>
-                <div class="form-group">
-                    <label>密码</label>
-                    <input type="password" placeholder="请输入密码">
-                </div>
-                <button class="form-btn">登录</button>
-                <div class="form-switch">
-                    还没有账号？<span id="showRegisterForm">立即注册</span>
-                </div>
-            </div>
-            
-            <!-- 注册表单 -->
-            <div class="register-form" id="registerForm" style="display: none;">
-                <div class="form-group">
-                    <label>用户名</label>
-                    <input type="text" placeholder="请设置用户名">
-                </div>
-                <div class="form-group">
-                    <label>手机号</label>
-                    <input type="tel" placeholder="请输入手机号">
-                </div>
-                <div class="form-group">
-                    <label>验证码</label>
-                    <div style="display: flex; gap: 10px;">
-                        <input type="text" placeholder="请输入验证码" style="flex: 1;">
-                        <button class="form-btn" style="padding: 8px; flex-shrink: 0;">获取验证码</button>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>密码</label>
-                    <input type="password" placeholder="请设置密码">
-                </div>
-                <div class="form-group">
-                    <label>确认密码</label>
-                    <input type="password" placeholder="请确认密码">
-                </div>
-                <div class="form-group">
-                    <label>邀请码 (选填)</label>
-                    <input type="text" placeholder="请输入邀请码（可选）">
-                </div>
-                <button class="form-btn">注册</button>
-                <div class="form-switch">
-                    已有账号？<span id="showLoginForm">立即登录</span>
-                </div>
-            </div>
-            
-            <!-- 二维码登录 -->
-            <div class="qrcode-login" id="qrcodeLoginForm" style="display: none;">
-                <div class="qrcode-container">
-                    <div class="qrcode-img">微信扫码登录</div>
-                    <p class="text-sm text-gray-400">请使用微信扫描二维码登录</p>
-                </div>
-            </div>
+    <!-- 新增：图片最大化容器 -->
+    <div id="imgMaximizeMask" class="img-maximize-mask" style="display: none;">
+        <div class="maximize-img-container">
+            <img id="maximizeImg" class="maximize-img" src="" alt="最大化图片">
         </div>
     </div>
 
-    <!-- 拖拽功能 JS -->
     <script>
-        // 原有拖拽分割条功能
-        const leftPanel = document.getElementById('leftPanel');
-        const rightPanel = document.getElementById('rightPanel');
-        const gutter = document.getElementById('dragGutter');
-        const container = document.getElementById('mainContainer');
-
-        let isDragging = false;
-
-        gutter.addEventListener('mousedown', (e) => {
-            isDragging = true;
-            document.body.style.cursor = 'col-resize';
-            e.preventDefault();
-        });
-
-        window.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-            const containerRect = container.getBoundingClientRect();
-            const percent = (e.clientX - containerRect.left) / containerRect.width * 100;
-            
-            // 限制最小/最大宽度
-            if(percent > 25 && percent < 70){
-                leftPanel.style.width = percent + '%';
-            }
-        });
-
-        window.addEventListener('mouseup', () => {
-            isDragging = false;
-            document.body.style.cursor = '';
-        });
-
-        // 1. 生成按钮积分显示 - 生成按钮改为调整图片后生成新图片
-        let currentQuality = 'standard';
-        const scoreConsumeEl = document.getElementById('scoreConsume');
-
-        // ===================== 新增功能实现 =====================
         // 全局变量
-        let draggingItem = null;
-        let currentEditImage = null;
-        let currentEditArea = ''; // 'operate' 或 'result'
+        let custom_selectedImgItem = null;
+        let custom_isProcessingImg = false;
 
-        // 1.1 图片拖拽排序 + 跨区域调入功能
-        function initDragAndDrop() {
-            // 操作区和结果区容器
-            const operateContainer = document.getElementById('operateImagesContainer');
-            const resultContainer = document.getElementById('resultImagesContainer');
-
-            // 通用拖拽处理函数
-            function handleDragStart(e) {
-                draggingItem = this;
-                this.classList.add('img-item-dragging');
-                e.dataTransfer.effectAllowed = 'move';
-                e.dataTransfer.setData('text/html', this.innerHTML);
-                // 记录当前所属区域
-                if (this.closest('#operateImagesContainer')) {
-                    currentEditArea = 'operate';
-                } else if (this.closest('#resultImagesContainer')) {
-                    currentEditArea = 'result';
-                }
-            }
-
-            function handleDragEnd() {
-                this.classList.remove('img-item-dragging');
-                draggingItem = null;
-                // 移除所有占位符
-                document.querySelectorAll('.img-drop-placeholder').forEach(placeholder => {
-                    placeholder.remove();
-                });
-            }
-
-            function handleDragOver(e) {
-                if (e.preventDefault) e.preventDefault();
-                this.classList.add('bg-gray-700/30');
-                return false;
-            }
-
-            function handleDragLeave() {
-                this.classList.remove('bg-gray-700/30');
-                // 移除占位符
-                if (draggingItem && this.contains(draggingItem)) return;
-                this.querySelectorAll('.img-drop-placeholder').forEach(placeholder => {
-                    placeholder.remove();
-                });
-            }
-
-            function handleDrop(e) {
-                e.stopPropagation();
-                this.classList.remove('bg-gray-700/30');
-                
-                if (draggingItem !== this) {
-                    // 跨区域拖拽
-                    if (!this.contains(draggingItem)) {
-                        // 从原容器移除
-                        draggingItem.remove();
-                        // 添加到新容器
-                        this.appendChild(draggingItem);
-                        // 更新图片序号
-                        updateImageNumbers();
-                    } else {
-                        // 同区域内排序
-                        const placeholder = this.querySelector('.img-drop-placeholder');
-                        if (placeholder) {
-                            const parent = placeholder.parentNode;
-                            const index = Array.from(parent.children).indexOf(placeholder);
-                            placeholder.remove();
-                            parent.insertBefore(draggingItem, parent.children[index]);
-                            // 更新图片序号
-                            updateImageNumbers();
-                        } else {
-                            // 拖到容器空白处
-                            this.appendChild(draggingItem);
-                            updateImageNumbers();
-                        }
-                    }
-                }
-                
-                return false;
-            }
-
-            function handleDragEnter(e) {
-                e.preventDefault();
-                // 创建占位符
-                if (draggingItem && !this.contains(draggingItem) && !this.classList.contains('img-drop-placeholder')) {
-                    const placeholder = document.createElement('div');
-                    placeholder.className = 'img-drop-placeholder';
-                    this.appendChild(placeholder);
-                }
-            }
-
-            // 为容器绑定事件
-            [operateContainer, resultContainer].forEach(container => {
-                container.addEventListener('dragover', handleDragOver);
-                container.addEventListener('dragleave', handleDragLeave);
-                container.addEventListener('drop', handleDrop);
-                container.addEventListener('dragenter', handleDragEnter);
-            });
-
-            // 为新增图片绑定拖拽事件
-            document.addEventListener('DOMNodeInserted', (e) => {
-                if (e.target.classList.contains('operate-img-item') || e.target.classList.contains('result-img-item')) {
-                    e.target.setAttribute('draggable', true);
-                    e.target.addEventListener('dragstart', handleDragStart);
-                    e.target.addEventListener('dragend', handleDragEnd);
-                    // 绑定点击编辑事件
-                    e.target.addEventListener('click', () => openEditModal(e.target));
-                }
-            });
-
-            // 更新图片序号
-            function updateImageNumbers() {
-                // 更新操作区序号
-                document.querySelectorAll('#operateImagesContainer .operate-img-item').forEach((item, index) => {
-                    const numberEl = item.querySelector('.operate-img-number');
-                    if (numberEl) {
-                        numberEl.textContent = index + 1;
-                    } else {
-                        // 如果没有序号元素，创建一个
-                        const newNumberEl = document.createElement('div');
-                        newNumberEl.className = 'operate-img-number';
-                        newNumberEl.textContent = index + 1;
-                        item.prepend(newNumberEl);
-                    }
-                });
-            }
-        }
-
-        // 1.2 图片点击打开编辑模态框
-        function openEditModal(imgItem) {
-            currentEditImage = imgItem;
-            const previewModal = document.getElementById('previewModal');
-            const previewImage = document.getElementById('previewImage');
-            const previewEditInput = document.getElementById('previewEditInput');
-            
-            // 获取图片地址
-            const imgSrc = imgItem.querySelector('img')?.src || '';
-            previewImage.src = imgSrc;
-            previewEditInput.value = '';
-            
-            // 显示模态框
-            previewModal.style.display = 'flex';
-            
-            // 记录当前编辑图片所属区域
-            if (imgItem.closest('#operateImagesContainer')) {
-                currentEditArea = 'operate';
-            } else if (imgItem.closest('#resultImagesContainer')) {
-                currentEditArea = 'result';
-            }
-        }
-
-        // 1.3 关闭编辑模态框
-        document.getElementById('closePreviewBtn').addEventListener('click', () => {
-            document.getElementById('previewModal').style.display = 'none';
-            currentEditImage = null;
-            currentEditArea = '';
-        });
-
-        // 1.4 切换图片所属区域
-        document.getElementById('switchAreaBtn').addEventListener('click', () => {
-            if (!currentEditImage) return;
-            
-            const operateContainer = document.getElementById('operateImagesContainer');
-            const resultContainer = document.getElementById('resultImagesContainer');
-            
-            // 移除当前图片
-            currentEditImage.remove();
-            
-            // 添加到另一区域
-            if (currentEditArea === 'operate') {
-                // 从操作区切换到结果区
-                currentEditImage.classList.remove('operate-img-item');
-                currentEditImage.classList.add('result-img-item');
-                resultContainer.appendChild(currentEditImage);
-                currentEditArea = 'result';
-            } else {
-                // 从结果区切换到操作区
-                currentEditImage.classList.remove('result-img-item');
-                currentEditImage.classList.add('operate-img-item');
-                operateContainer.appendChild(currentEditImage);
-                currentEditArea = 'operate';
-                // 更新操作区序号
-                updateImageNumbers();
-            }
-            
-            // 更新预览图片所属区域
-            document.getElementById('previewImage').dataset.area = currentEditArea;
-        });
-
-        // 2. 预设按钮高亮 + 自动填充提示词
-        function initPresetButtons() {
-            const presetButtons = document.querySelectorAll('.preset-function-btn');
-            const promptInput = document.getElementById('promptInput');
-            
-            presetButtons.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    // 移除所有按钮的高亮
-                    presetButtons.forEach(b => b.classList.remove('active'));
-                    // 当前按钮高亮
-                    this.classList.add('active');
-                    // 自动填充提示词
-                    const promptText = this.getAttribute('data-prompt');
-                    promptInput.value = promptText;
-                    
-                    // 3秒后自动取消高亮（可选）
-                    setTimeout(() => {
-                        this.classList.remove('active');
-                    }, 3000);
-                });
+        // 1. 基础函数：更新操作区图片序号
+        function custom_updateImageNumbers() {
+            const items = document.querySelectorAll('.operate-img-item .operate-img-number');
+            items.forEach((item, index) => {
+                item.textContent = index + 1;
             });
         }
 
-        // 3. 添加图片功能（测试用）
-        document.getElementById('addImageBtn').addEventListener('click', () => {
+        // 2. 核心函数：添加图片到操作区
+        function custom_addImageToOperateArea(imgSrc) {
             const operateContainer = document.getElementById('operateImagesContainer');
+            if (!operateContainer) return;
+
             const imgItem = document.createElement('div');
-            imgItem.className = 'operate-img-item';
+            imgItem.className = 'operate-img-item border border-gray-800 rounded overflow-hidden draggable';
             imgItem.setAttribute('draggable', true);
             
-            // 生成随机图片（测试用）
-            const randomImg = `https://picsum.photos/seed/${Math.random()}/400/300`;
-            
             imgItem.innerHTML = `
-                <div class="operate-img-number">${operateContainer.children.length + 1}</div>
-                <img src="${randomImg}" class="operate-img" alt="操作图片">
+                <div class="operate-img-number absolute top-1 left-1 bg-black/50 text-white text-xs px-1">${operateContainer.children.length + 1}</div>
+                <img src="${imgSrc}" class="operate-img w-full h-auto" alt="操作图片">
             `;
+
+            // 绑定双击最大化
+            custom_bindImgDoubleClick(imgItem);
             
-            operateContainer.appendChild(imgItem);
-        });
-
-        // 4. 套索工具功能（基础实现）
-        function initLassoTool() {
-            const lassoBtn = document.getElementById('lassoBtn');
-            const lassoTool = document.getElementById('lassoTool');
-            const previewContent = document.querySelector('.preview-content');
-            let isLassoActive = false;
-            let startX, startY;
-
-            lassoBtn.addEventListener('click', () => {
-                isLassoActive = !isLassoActive;
-                lassoBtn.style.background = isLassoActive ? '#3b82f6' : '#1e212b';
+            // 绑定选中事件
+            imgItem.addEventListener('click', (e) => {
+                if (custom_selectedImgItem) {
+                    custom_selectedImgItem.style.border = '1px solid #374151';
+                }
+                custom_selectedImgItem = imgItem;
+                imgItem.style.border = '2px solid #3b82f6';
                 
-                if (isLassoActive) {
-                    lassoTool.style.display = 'block';
-                } else {
-                    lassoTool.style.display = 'none';
-                    lassoTool.style.width = '0';
-                    lassoTool.style.height = '0';
-                    lassoTool.style.left = '0';
-                    lassoTool.style.top = '0';
+                const toolbar = document.getElementById('imgPositionToolbar');
+                if (toolbar) {
+                    toolbar.style.display = 'flex';
+                    const currentIndex = Array.from(operateContainer.children).indexOf(imgItem) + 1;
+                    const posInput = document.getElementById('targetPositionInput');
+                    if (posInput) posInput.value = currentIndex;
                 }
             });
 
-            previewContent.addEventListener('mousedown', (e) => {
-                if (!isLassoActive) return;
-                
-                const rect = previewContent.getBoundingClientRect();
-                startX = e.clientX - rect.left;
-                startY = e.clientY - rect.top;
-                
-                lassoTool.style.left = `${startX}px`;
-                lassoTool.style.top = `${startY}px`;
-                lassoTool.style.width = '0';
-                lassoTool.style.height = '0';
+            operateContainer.appendChild(imgItem);
+            custom_updateImageNumbers();
+        }
 
-                function onMouseMove(e) {
-                    const currentX = e.clientX - rect.left;
-                    const currentY = e.clientY - rect.top;
-                    
-                    const width = currentX - startX;
-                    const height = currentY - startY;
-                    
-                    lassoTool.style.width = `${Math.abs(width)}px`;
-                    lassoTool.style.height = `${Math.abs(height)}px`;
-                    lassoTool.style.left = `${width < 0 ? currentX : startX}px`;
-                    lassoTool.style.top = `${height < 0 ? currentY : startY}px`;
-                }
+        // 3. 绑定图片双击最大化
+        function custom_bindImgDoubleClick(imgItem) {
+            imgItem.addEventListener('dblclick', (e) => {
+                e.stopPropagation();
+                const img = imgItem.querySelector('img');
+                if (!img || !img.src) return;
 
-                function onMouseUp() {
-                    document.removeEventListener('mousemove', onMouseMove);
-                    document.removeEventListener('mouseup', onMouseUp);
-                }
+                // 显示最大化遮罩
+                const maximizeMask = document.getElementById('imgMaximizeMask');
+                const maximizeImg = document.getElementById('maximizeImg');
+                maximizeImg.src = img.src;
+                maximizeMask.style.display = 'flex';
 
-                document.addEventListener('mousemove', onMouseMove);
-                document.addEventListener('mouseup', onMouseUp);
+                // 模拟打开修改界面（延迟300ms）
+                setTimeout(() => {
+                    maximizeMask.style.display = 'none';
+                    alert(`已打开【${img.alt}】的修改界面！`);
+                    // 实际项目中替换为你的修改界面打开逻辑
+                }, 300);
             });
         }
 
-        // 5. 遮罩颜色选择功能
-        function initColorPicker() {
-            const colorBlocks = document.querySelectorAll('.color-block');
-            colorBlocks.forEach(block => {
-                block.addEventListener('click', function() {
-                    colorBlocks.forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    // 可在此处添加遮罩颜色应用逻辑
-                    const selectedColor = this.getAttribute('data-color');
-                    console.log('选中遮罩颜色:', selectedColor);
+        // 4. 初始化操作区拖拽/粘贴
+        function custom_initOperateAreaImgAdd() {
+            const operatePanel = document.querySelector('.panel-hover');
+            if (!operatePanel) return;
+
+            // 阻止默认拖拽行为
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                operatePanel.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }, false);
+            });
+
+            // 拖拽样式
+            operatePanel.addEventListener('dragenter', () => {
+                operatePanel.classList.add('operate-area-drag-over');
+            });
+            operatePanel.addEventListener('dragleave', () => {
+                operatePanel.classList.remove('operate-area-drag-over');
+            });
+            operatePanel.addEventListener('drop', () => {
+                operatePanel.classList.remove('operate-area-drag-over');
+            });
+
+            // 处理拖拽文件
+            operatePanel.addEventListener('drop', (e) => {
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    Array.from(files).forEach(file => {
+                        if (file.type.startsWith('image/')) {
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                custom_addImageToOperateArea(e.target.result);
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    });
+                }
+            });
+
+            // 处理粘贴
+            operatePanel.addEventListener('paste', (e) => {
+                const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+                for (let item of items) {
+                    if (item.kind === 'file' && item.type.startsWith('image/')) {
+                        const file = item.getAsFile();
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            custom_addImageToOperateArea(e.target.result);
+                        };
+                        reader.readAsDataURL(file);
+                        break;
+                    }
+                }
+            });
+
+            // 粘贴提示
+            const pasteTip = document.createElement('div');
+            pasteTip.className = 'paste-tip';
+            pasteTip.innerHTML = 'Ctrl+V粘贴图片<br>或拖拽图片到此处';
+            operatePanel.appendChild(pasteTip);
+        }
+
+        // 5. 初始化结果区拖拽到操作区
+        function custom_initResultToOperateDrag() {
+            const resultContainer = document.getElementById('resultImagesContainer');
+            if (!resultContainer) return;
+
+            // 拖拽开始
+            resultContainer.addEventListener('dragstart', (e) => {
+                const dragItem = e.target.closest('.result-img-item');
+                if (dragItem) {
+                    const imgSrc = dragItem.querySelector('img').src;
+                    e.dataTransfer.setData('text/plain', imgSrc);
+                }
+            });
+
+            // 拖拽落地到操作区
+            document.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const operatePanel = document.querySelector('.panel-hover');
+                if (operatePanel && operatePanel.contains(e.target)) {
+                    const text = e.dataTransfer.getData('text/plain');
+                    if (text && text.startsWith('http')) {
+                        custom_addImageToOperateArea(text);
+                    }
+                }
+            });
+
+            // 结果区粘贴到操作区
+            resultContainer.addEventListener('paste', (e) => {
+                const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+                for (let item of items) {
+                    if (item.kind === 'file' && item.type.startsWith('image/')) {
+                        const file = item.getAsFile();
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            custom_addImageToOperateArea(e.target.result);
+                        };
+                        reader.readAsDataURL(file);
+                        break;
+                    }
+                }
+            });
+        }
+
+        // 6. 初始化图片位置编辑
+        function custom_initImagePositionEdit() {
+            const toolbar = document.getElementById('imgPositionToolbar');
+            if (!toolbar) return;
+
+            // 上移
+            document.getElementById('moveUpBtn').addEventListener('click', () => {
+                if (!custom_selectedImgItem) return;
+                const parent = custom_selectedImgItem.parentNode;
+                const siblings = Array.from(parent.children);
+                const idx = siblings.indexOf(custom_selectedImgItem);
+                if (idx > 0) {
+                    parent.insertBefore(custom_selectedImgItem, siblings[idx - 1]);
+                    custom_updateImageNumbers();
+                    document.getElementById('targetPositionInput').value = idx;
+                }
+            });
+
+            // 下移
+            document.getElementById('moveDownBtn').addEventListener('click', () => {
+                if (!custom_selectedImgItem) return;
+                const parent = custom_selectedImgItem.parentNode;
+                const siblings = Array.from(parent.children);
+                const idx = siblings.indexOf(custom_selectedImgItem);
+                if (idx < siblings.length - 1) {
+                    parent.insertBefore(custom_selectedImgItem, siblings[idx + 2] || null);
+                    custom_updateImageNumbers();
+                    document.getElementById('targetPositionInput').value = idx + 2;
+                }
+            });
+
+            // 置顶
+            document.getElementById('moveToTopBtn').addEventListener('click', () => {
+                if (!custom_selectedImgItem) return;
+                const parent = custom_selectedImgItem.parentNode;
+                parent.prepend(custom_selectedImgItem);
+                custom_updateImageNumbers();
+                document.getElementById('targetPositionInput').value = 1;
+            });
+
+            // 置底
+            document.getElementById('moveToBottomBtn').addEventListener('click', () => {
+                if (!custom_selectedImgItem) return;
+                const parent = custom_selectedImgItem.parentNode;
+                parent.appendChild(custom_selectedImgItem);
+                custom_updateImageNumbers();
+                document.getElementById('targetPositionInput').value = parent.children.length;
+            });
+
+            // 移动到指定位置
+            document.getElementById('moveToPositionBtn').addEventListener('click', () => {
+                if (!custom_selectedImgItem) return;
+                const parent = custom_selectedImgItem.parentNode;
+                const total = parent.children.length;
+                const target = parseInt(document.getElementById('targetPositionInput').value);
+                
+                if (isNaN(target) || target < 1 || target > total) {
+                    alert(`请输入1-${total}之间的数字！`);
+                    return;
+                }
+
+                custom_selectedImgItem.remove();
+                const siblings = Array.from(parent.children);
+                if (target - 1 < siblings.length) {
+                    parent.insertBefore(custom_selectedImgItem, siblings[target - 1]);
+                } else {
+                    parent.appendChild(custom_selectedImgItem);
+                }
+                custom_updateImageNumbers();
+            });
+
+            // 关闭工具栏
+            document.getElementById('closePositionToolbarBtn').addEventListener('click', () => {
+                toolbar.style.display = 'none';
+                if (custom_selectedImgItem) {
+                    custom_selectedImgItem.style.border = '1px solid #374151';
+                    custom_selectedImgItem = null;
+                }
+            });
+        }
+
+        // 7. 初始化添加图片弹窗
+        function custom_initAddImageModal() {
+            const modal = document.getElementById('addImgModal');
+            if (!modal) return;
+
+            // 打开弹窗
+            document.getElementById('addImageBtn').addEventListener('click', () => {
+                modal.style.display = 'block';
+            });
+
+            // 切换标签
+            document.querySelectorAll('.add-img-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.add-img-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    const type = tab.getAttribute('data-tab');
+                    document.getElementById('uploadTabContent').style.display = type === 'upload' ? 'flex' : 'none';
+                    document.getElementById('urlTabContent').style.display = type === 'url' ? 'flex' : 'none';
                 });
             });
-        }
 
-        // 6. 应用修改按钮功能
-        document.getElementById('applyEditBtn').addEventListener('click', () => {
-            const editText = document.getElementById('previewEditInput').value;
-            if (!editText || !currentEditImage) return;
-            
-            // 此处可添加修改逻辑
-            alert(`已应用修改：${editText}`);
-            
-            // 关闭模态框
-            document.getElementById('previewModal').style.display = 'none';
-        });
+            // 上传按钮点击
+            document.getElementById('uploadArea').addEventListener('click', () => {
+                document.getElementById('uploadInput').click();
+            });
 
-        // 7. 删除图片功能
-        document.getElementById('deleteBtn').addEventListener('click', () => {
-            if (currentEditImage) {
-                currentEditImage.remove();
-                // 更新操作区序号
-                updateImageNumbers();
-                // 关闭模态框
-                document.getElementById('previewModal').style.display = 'none';
-                currentEditImage = null;
-                currentEditArea = '';
-            }
-        });
-
-        // 8. 下载图片功能
-        document.getElementById('downloadBtn').addEventListener('click', () => {
-            const img = document.getElementById('previewImage');
-            if (img.src) {
-                const a = document.createElement('a');
-                a.href = img.src;
-                a.download = `ai-design-${Date.now()}.jpg`;
-                a.click();
-            }
-        });
-
-        // 9. 对比按钮功能
-        document.getElementById('compareBtn').addEventListener('click', () => {
-            const img = document.getElementById('previewImage');
-            // 此处可添加原图/编辑图对比逻辑
-            img.style.opacity = img.style.opacity === '0.5' ? '1' : '0.5';
-        });
-
-        // 辅助函数：更新图片序号
-        function updateImageNumbers() {
-            document.querySelectorAll('#operateImagesContainer .operate-img-item').forEach((item, index) => {
-                const numberEl = item.querySelector('.operate-img-number');
-                if (numberEl) {
-                    numberEl.textContent = index + 1;
+            // 确认上传
+            document.getElementById('confirmUploadBtn').addEventListener('click', () => {
+                const files = document.getElementById('uploadInput').files;
+                if (files.length === 0) {
+                    alert('请选择图片！');
+                    return;
                 }
+                Array.from(files).forEach(file => {
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            custom_addImageToOperateArea(e.target.result);
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+                modal.style.display = 'none';
+            });
+
+            // 确认URL添加
+            document.getElementById('confirmUrlBtn').addEventListener('click', () => {
+                const url = document.getElementById('imgUrlInput').value.trim();
+                if (!url) {
+                    alert('请输入图片URL！');
+                    return;
+                }
+                custom_addImageToOperateArea(url);
+                modal.style.display = 'none';
+            });
+
+            // 关闭弹窗
+            document.getElementById('closeAddImgBtn').addEventListener('click', () => {
+                modal.style.display = 'none';
             });
         }
 
-        // 初始化所有功能
-        window.addEventListener('DOMContentLoaded', () => {
-            initDragAndDrop();
-            initPresetButtons();
-            initLassoTool();
-            initColorPicker();
-            
-            // 创作风暴切换
-            document.getElementById('backToText2Img').addEventListener('click', () => {
-                document.getElementById('text2imgInterface').style.display = 'flex';
-            });
-            document.getElementById('closeText2ImgBtn').addEventListener('click', () => {
-                document.getElementById('text2imgInterface').style.display = 'none';
-            });
-            
-            // 预设弹窗切换
-            document.getElementById('presetBtn').addEventListener('click', (e) => {
-                e.stopPropagation();
-                const presetModal = document.getElementById('promptPresets');
-                presetModal.style.display = presetModal.style.display === 'flex' ? 'none' : 'flex';
-            });
-            
-            // 点击空白处关闭预设弹窗
-            document.addEventListener('click', () => {
-                document.getElementById('promptPresets').style.display = 'none';
-            });
-            
-            // 邀请弹窗
-            document.getElementById('inviteBtn').addEventListener('click', () => {
-                document.getElementById('inviteModal').style.display = 'block';
-            });
-            document.getElementById('closeInviteBtn').addEventListener('click', () => {
-                document.getElementById('inviteModal').style.display = 'none';
-            });
-            
-            // 登录弹窗
-            document.getElementById('loginBtn').addEventListener('click', () => {
-                document.getElementById('loginModal').style.display = 'block';
-            });
-            document.getElementById('closeLoginBtn').addEventListener('click', () => {
-                document.getElementById('loginModal').style.display = 'none';
-            });
-            
-            // 资源管理弹窗
-            document.getElementById('resourceBtn').addEventListener('click', () => {
-                document.getElementById('historyInterface').style.display = 'flex';
-            });
-            document.getElementById('closeHistoryBtn').addEventListener('click', () => {
-                document.getElementById('historyInterface').style.display = 'none';
-            });
-        });
+        // 8. 初始化所有功能
+        window.onload = function() {
+            setTimeout(() => {
+                custom_initOperateAreaImgAdd();
+                custom_initResultToOperateDrag();
+                custom_initImagePositionEdit();
+                custom_initAddImageModal();
+                
+                // 绑定已有图片双击事件
+                document.querySelectorAll('.operate-img-item, .result-img-item').forEach(item => {
+                    custom_bindImgDoubleClick(item);
+                });
+
+                console.log('所有功能初始化完成！');
+            }, 500);
+        };
     </script>
 </body>
 </html>
