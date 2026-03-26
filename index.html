@@ -58,11 +58,17 @@
             flex: 1;
             display: flex;
             position: relative;
+            overflow: hidden;
+        }
+        .preview-img-container {
+            position: relative;
+            margin: auto;
+            transform-origin: center center;
+            transition: transform 0.2s ease;
         }
         .preview-img {
-            max-width: 80%;
-            max-height: 80%;
-            margin: auto;
+            max-width: none;
+            max-height: none;
             object-contain;
         }
         .preview-controls {
@@ -338,15 +344,51 @@
             flex-direction: column;
             gap: 20px;
         }
+        .text2img-drag-area {
+            flex: 1;
+            border: 2px dashed #374151;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6b7280;
+            font-size: 16px;
+            text-align: center;
+            padding: 20px;
+            position: relative;
+            background: rgba(30, 33, 43, 0.3);
+        }
+        .text2img-drag-area p {
+            max-width: 80%;
+            line-height: 1.6;
+        }
         .text2img-controls {
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
-        }
-        .text2img-control-group {
             background: #1e212b;
             padding: 10px;
             border-radius: 4px;
+            align-items: center;
+        }
+        .text2img-control-group {
+            padding: 8px 12px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .text2img-control-label {
+            font-size: 14px;
+            color: #9ca3af;
+        }
+        .text2img-control-select {
+            background: #0f1117;
+            border: 1px solid #374151;
+            border-radius: 4px;
+            padding: 4px 8px;
+            color: #e2e8f0;
+            font-size: 14px;
         }
         .text2img-result {
             flex: 1;
@@ -430,6 +472,126 @@
             text-decoration: underline;
             cursor: pointer;
         }
+
+        /* 新增：质量控制栏样式 */
+        .quality-control-bar {
+            background: #1e212b;
+            border-radius: 4px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 8px;
+        }
+        .control-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .control-label {
+            font-size: 14px;
+            color: #9ca3af;
+        }
+        .control-select {
+            background: #0f1117;
+            border: 1px solid #374151;
+            border-radius: 4px;
+            padding: 4px 8px;
+            color: #e2e8f0;
+            font-size: 14px;
+        }
+        .batch-control {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .batch-btn {
+            background: #374151;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        /* 新增：右侧预设键常亮样式 */
+        .preset-btn-active {
+            background: #3b82f6 !important;
+            border-color: #60a5fa !important;
+        }
+
+        /* 新增：修改工具面板样式 */
+        .edit-tool-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: #1e212b;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            padding: 12px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-width: 180px;
+        }
+        .tool-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .tool-title {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        .tool-slider {
+            width: 100%;
+            accent-color: #3b82f6;
+        }
+        .color-options {
+            display: flex;
+            gap: 4px;
+            margin-top: 4px;
+        }
+        .tool-color-block {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+        .tool-color-block.active {
+            border-color: #ffffff;
+        }
+        .tool-btn {
+            background: #374151;
+            border-radius: 4px;
+            padding: 6px;
+            text-align: center;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 4px;
+        }
+
+        /* 新增：提示词生成按钮 */
+        .prompt-generate-btn {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #3b82f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: none;
+            color: white;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden">
@@ -444,7 +606,8 @@
             <span id="backToText2Img" class="text-sm text-gray-400 cursor-pointer">返回创作风暴</span>
         </div>
         <div class="flex items-center gap-4">
-            <button id="inviteBtn" class="text-sm px-3 py-1 rounded hover:bg-gray-800">邀请加入</button>
+            <button id="inviteBtn" class="text-sm px-3 py-1 rounded hover:bg-gray-800">邀请好友</button>
+            <button id="docTutorialBtn" class="text-sm px-3 py-1 rounded hover:bg-gray-800">文档教程</button>
             <button id="resourceBtn" class="text-sm px-3 py-1 rounded hover:bg-gray-800">资源管理</button>
             <div class="relative group">
                 <button id="scoreBtn" class="text-sm px-3 py-1 rounded bg-gray-800 hover:bg-gray-700 flex items-center gap-1">
@@ -466,9 +629,9 @@
         <!-- 左侧操作区 -->
         <section id="leftPanel" class="h-full flex flex-col p-4 border-r border-gray-800" style="width:45%;min-width:300px;max-width:70%;">
             <div class="flex items-center justify-between mb-2">
-                <span class="text-xs text-gray-400">操作区</span>
+                <span class="text-xs text-gray-400">操作区 (可从外部软件/平台拖入图片)</span>
             </div>
-            <div class="flex-1 border-2 border-dashed border-gray-700 rounded-lg p-2 relative panel-hover overflow-hidden">
+            <div class="flex-1 border-2 border-dashed border-gray-700 rounded-lg p-2 relative panel-hover overflow-hidden" id="operateDropArea">
                 <!-- 操作区图片容器 -->
                 <div id="operateImagesContainer" class="operate-images">
                     <!-- 初始示例图片 -->
@@ -488,7 +651,51 @@
         <section id="rightPanel" class="flex-1 h-full p-4 overflow-y-auto scrollbar-hide">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-xs text-gray-400">生成结果区</span>
+                <div class="flex gap-2">
+                    <button class="text-xs px-2 py-1 rounded bg-gray-800 hover:bg-gray-700">全部</button>
+                    <button class="text-xs px-2 py-1 rounded hover:bg-gray-800">图片</button>
+                    <button class="text-xs px-2 py-1 rounded hover:bg-gray-800">视频</button>
+                </div>
             </div>
+            
+            <!-- 新增：图面质量规格分辨率控制栏 -->
+            <div class="quality-control-bar">
+                <div class="control-item">
+                    <span class="control-label">质量</span>
+                    <select class="control-select" id="mainQualitySelect">
+                        <option value="speed">极速</option>
+                        <option value="standard" selected>画质</option>
+                        <option value="high">高清</option>
+                    </select>
+                </div>
+                <div class="control-item">
+                    <span class="control-label">画幅</span>
+                    <select class="control-select" id="mainAspectSelect">
+                        <option value="auto">Auto</option>
+                        <option value="car" selected>汽车</option>
+                        <option value="16:9">16:9</option>
+                        <option value="4:3">4:3</option>
+                        <option value="1:1">1:1</option>
+                    </select>
+                </div>
+                <div class="control-item">
+                    <span class="control-label">分辨率</span>
+                    <select class="control-select" id="mainResolutionSelect">
+                        <option value="1k" selected>1K</option>
+                        <option value="2k">2K</option>
+                        <option value="4k">4K</option>
+                    </select>
+                </div>
+                <div class="batch-control">
+                    <span class="batch-btn">批量</span>
+                    <select class="control-select" id="batchCountSelect">
+                        <option value="3">3张</option>
+                        <option value="6" selected>6张</option>
+                        <option value="9">9张</option>
+                    </select>
+                </div>
+            </div>
+            
             <div id="resultImagesContainer" class="grid grid-cols-3 gap-4">
                 <div class="result-img-item aspect-[4/3] bg-gray-800 rounded overflow-hidden panel-hover" draggable="true">
                     <div class="result-img-controls">
@@ -539,22 +746,30 @@
         <aside class="w-64 h-full bg-[#12141a] border-l border-gray-800 p-4 overflow-y-auto scrollbar-hide">
             <div class="mb-4">
                 <span class="text-sm font-medium">右侧预设键</span>
+                <div class="flex justify-between items-center mt-2">
+                    <span class="text-xs text-gray-400">作用对象：整个项目</span>
+                    <span class="text-xs text-gray-400 cursor-pointer">点击照片显示操作</span>
+                </div>
+                <div class="flex gap-2 mt-2">
+                    <button class="text-xs px-2 py-1 rounded bg-blue-600 hover:bg-blue-500">室内设计</button>
+                    <button class="text-xs px-2 py-1 rounded hover:bg-gray-800">建筑设计</button>
+                </div>
             </div>
-            <div class="space-y-2">
-                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm">超级融合</button>
-                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm">平面布局</button>
-                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm">空间分镜</button>
-                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm">SU转效果图</button>
-                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm">空间爆炸</button>
-                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm">材料排版</button>
-                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm">一键彩平</button>
-                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm">景观彩平</button>
-                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm">灯光氛围</button>
-                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm">通道转换</button>
-                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm">彩平转轴测图</button>
-                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm">软装分析</button>
-                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm">地域分析</button>
-                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm">概念推演</button>
+            <div class="space-y-2" id="presetButtonsContainer">
+                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm preset-btn" data-prompt="超级融合效果，多图片融合，自然过渡，高清细节">超级融合</button>
+                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm preset-btn" data-prompt="专业平面布局设计，合理空间规划，人体工程学，功能分区明确">平面布局</button>
+                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm preset-btn" data-prompt="空间分镜效果，多视角展示，电影镜头感，空间层次分明">空间分镜</button>
+                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm preset-btn" data-prompt="SU模型转效果图，真实材质，光影效果，建筑细节还原">SU转效果图</button>
+                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm preset-btn" data-prompt="空间爆炸效果，解构主义，分层展示，细节突出">空间爆炸</button>
+                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm preset-btn" data-prompt="材料排版设计，材质展示，纹理细节，质感表现">材料排版</button>
+                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm preset-btn" data-prompt="一键生成彩色平面图，色彩搭配合理，功能区清晰，专业美观">一键彩平</button>
+                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm preset-btn" data-prompt="景观彩色平面图，植物配置，硬质铺装，空间层次，生态自然">景观彩平</button>
+                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm preset-btn" data-prompt="灯光氛围调整，光影效果，氛围营造，明暗对比，色温调节">灯光氛围</button>
+                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm preset-btn" data-prompt="通道转换效果，多通道分离，色彩调整，细节增强">通道转换</button>
+                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm preset-btn" data-prompt="彩色平面图转轴测图，三维效果，空间感强，比例准确">彩平转轴测图</button>
+                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm preset-btn" data-prompt="软装分析图，家具布局，色彩搭配，材质表现，风格统一">软装分析</button>
+                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm preset-btn" data-prompt="地域分析图，文化元素，地域特色，气候适应，材料选择">地域分析</button>
+                <button class="w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm preset-btn" data-prompt="概念推演效果，创意表达，风格演变，视觉化呈现">概念推演</button>
             </div>
         </aside>
     </main>
@@ -562,7 +777,7 @@
     <!-- 底部输入栏 -->
     <footer class="h-16 border-t border-gray-800 bg-[#12141a] flex items-center px-4 gap-4">
         <div class="flex-1 relative">
-            <input id="promptInput" type="text" placeholder="输入提示词..." class="w-full bg-[#1e212b] rounded px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-600">
+            <input id="promptInput" type="text" placeholder="描述您的创意灵感..." class="w-full bg-[#1e212b] rounded px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-600">
             <!-- 预设提示词弹窗 -->
             <div id="promptPresets" class="prompt-presets">
                 <div class="preset-item" data-prompt="现代简约风格，高清，自然光，建筑效果图">现代简约建筑效果图</div>
@@ -570,7 +785,7 @@
                 <div class="preset-item" data-prompt="工业风，loft空间，金属质感，高对比度">工业风LOFT空间</div>
                 <div class="preset-item" data-prompt="添加自定义预设" onclick="addCustomPreset()">+ 添加自定义预设</div>
             </div>
-            <button id="presetBtn" class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gray-700 rounded px-2 py-1 text-xs">预设</button>
+            <button id="presetBtn" class="absolute right-10 top-1/2 transform -translate-y-1/2 bg-gray-700 rounded px-2 py-1 text-xs">预设</button>
         </div>
         <button id="generateBtn" class="px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 text-sm">
             生成 <span id="scoreConsume">(消耗: 50积分)</span>
@@ -579,60 +794,166 @@
 
     <!-- 图片预览修改模态框 -->
     <div id="previewModal" class="preview-modal">
+        <!-- 新增：修改工具面板 -->
+        <div class="edit-tool-panel">
+            <div class="tool-group">
+                <div class="tool-title">笔刷</div>
+                <label class="text-xs text-gray-400">笔刷大小</label>
+                <input type="range" min="1" max="100" value="40" class="tool-slider" id="brushSizeSlider">
+                <label class="text-xs text-gray-400 mt-2">笔刷颜色</label>
+                <div class="color-options">
+                    <div class="tool-color-block active" style="background: red;" data-color="red"></div>
+                    <div class="tool-color-block" style="background: green;" data-color="green"></div>
+                    <div class="tool-color-block" style="background: yellow;" data-color="yellow"></div>
+                    <div class="tool-color-block" style="background: blue;" data-color="blue"></div>
+                    <div class="tool-color-block" style="background: white;" data-color="white"></div>
+                </div>
+                <div class="tool-btn" id="eraserBtn">橡皮擦</div>
+                <div class="tool-btn" id="undoBtn">撤销上步款</div>
+            </div>
+            <div class="tool-group">
+                <div class="tool-title">文字</div>
+                <div class="flex gap-2">
+                    <button class="tool-btn flex-1">小</button>
+                    <button class="tool-btn flex-1 bg-blue-600">中</button>
+                    <button class="tool-btn flex-1">大</button>
+                </div>
+                <label class="text-xs text-gray-400 mt-2">文字颜色</label>
+                <div class="color-options">
+                    <div class="tool-color-block active" style="background: red;" data-color="red"></div>
+                    <div class="tool-color-block" style="background: green;" data-color="green"></div>
+                    <div class="tool-color-block" style="background: yellow;" data-color="yellow"></div>
+                    <div class="tool-color-block" style="background: blue;" data-color="blue"></div>
+                    <div class="tool-color-block" style="background: white;" data-color="white"></div>
+                </div>
+            </div>
+            <div class="tool-group">
+                <div class="tool-title">箭头</div>
+                <label class="text-xs text-gray-400">箭头粗细</label>
+                <input type="range" min="1" max="20" value="8" class="tool-slider" id="arrowSizeSlider">
+                <label class="text-xs text-gray-400 mt-2">箭头颜色</label>
+                <div class="color-options">
+                    <div class="tool-color-block active" style="background: red;" data-color="red"></div>
+                    <div class="tool-color-block" style="background: green;" data-color="green"></div>
+                    <div class="tool-color-block" style="background: yellow;" data-color="yellow"></div>
+                    <div class="tool-color-block" style="background: blue;" data-color="blue"></div>
+                    <div class="tool-color-block" style="background: white;" data-color="white"></div>
+                </div>
+                <div class="tool-btn">透明遮光罩带标签</div>
+            </div>
+        </div>
+        
         <div class="preview-content">
             <div class="lasso-tool" id="lassoTool"></div>
-            <!-- 遮罩颜色选择 -->
-            <div class="mask-color-picker">
-                <div class="color-block active" style="background: red;" data-color="red"></div>
-                <div class="color-block" style="background: yellow;" data-color="yellow"></div>
-                <div class="color-block" style="background: green;" data-color="green"></div>
-                <div class="color-block" style="background: blue;" data-color="blue"></div>
-                <div class="color-block" style="background: white;" data-color="white"></div>
+            <div class="preview-img-container" id="previewImgContainer">
+                <img id="previewImage" class="preview-img" src="" alt="预览图片">
             </div>
-            <img id="previewImage" class="preview-img" src="" alt="预览图片">
             <!-- 预览控制按钮 -->
             <div class="preview-controls">
                 <div class="preview-control-btn" id="compareBtn" title="原图/现图对比">↔</div>
+                <div class="preview-control-btn" id="zoomBtn" title="缩放">🔍</div>
+                <div class="preview-control-btn" id="moveBtn" title="移动">⊕</div>
                 <div class="preview-control-btn" id="downloadBtn" title="下载图片">↓</div>
-                <div class="preview-control-btn" id="deleteBtn" title="删除图片">×</div>
+                <div class="preview-control-btn" id="deleteBtn" title="删除图片">🗑️</div>
                 <div class="preview-control-btn" id="lassoBtn" title="套索工具">✎</div>
-                <div class="preview-control-btn" id="closePreviewBtn" title="关闭预览">✕</div>
+                <div class="preview-control-btn" id="closePreviewBtn" title="退出当前界面">✕</div>
             </div>
+            
+            <!-- 图面质量控制区 -->
+            <div class="quality-control-bar" style="position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%); width: auto; min-width: 300px;">
+                <div class="control-item">
+                    <span class="control-label">质量</span>
+                    <select class="control-select" id="previewQualitySelect">
+                        <option value="speed">极速</option>
+                        <option value="standard" selected>画质</option>
+                        <option value="high">高清</option>
+                    </select>
+                </div>
+                <div class="control-item">
+                    <span class="control-label">画幅</span>
+                    <select class="control-select" id="previewAspectSelect">
+                        <option value="auto">Auto</option>
+                        <option value="car" selected>汽车</option>
+                    </select>
+                </div>
+                <div class="control-item">
+                    <span class="control-label">分辨率</span>
+                    <select class="control-select" id="previewResolutionSelect">
+                        <option value="1k" selected>1K</option>
+                        <option value="2k">2K</option>
+                        <option value="4k">4K</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- 提示词生成按钮 -->
+            <button class="prompt-generate-btn" id="previewPromptGenerateBtn">⚡</button>
         </div>
-        <input id="previewEditInput" class="preview-edit-input" placeholder="输入修改提示词...">
+        <textarea id="previewEditInput" class="preview-edit-input" placeholder="输入修改提示词..." rows="4">镜头 1:这是一个局部的特写镜头。清晨的阳光透过格栅(或百叶窗)洒在墙面上,形成规律的光斑。东方女性站在光斑旁,只有她的侧脸或肩膀光线勾勒出轮廓,重点合的构图增加了空间的复杂度和神秘感,人物是虚,空间是实。
+镜头 6:这是一个广角大全景,但色调更偏冷,表现深夜或黎明前的宁静。女性已经在远处的卧室区域休息,只有客厅的一盏小夜灯亮着,强调整个建筑空间的寂静与安全感。</textarea>
         <button id="applyEditBtn" class="w-40 mx-auto mt-10 py-2 bg-blue-600 rounded hover:bg-blue-500 text-sm">应用修改</button>
     </div>
 
-    <!-- 文字生图界面 -->
+    <!-- 文字生图界面 (创作风暴) -->
     <div id="text2imgInterface" class="text2img-interface">
         <div class="text2img-header">
             <h2>创作风暴 - 文字生图</h2>
             <div class="text2img-close" id="closeText2ImgBtn">关闭</div>
         </div>
         <div class="text2img-content">
+            <!-- 拖拽区域 -->
+            <div class="text2img-drag-area" id="text2imgDragArea">
+                <p>1.将图片从其它外部软件或平台拖入到此位置时界面自动切换到主界面的"操作区"进行图片编辑
+2.在没有任何图片拖入或加入时在下面提示词框内输入提示词会自动按提示词生成图片，同时生成的图片自动切换到主界面的"操作区"进行图片再编辑。</p>
+            </div>
+            
+            <!-- 画面质量控制栏 -->
             <div class="text2img-controls">
                 <div class="text2img-control-group">
-                    <h4 class="mb-2">质量控制</h4>
-                    <!-- 隐藏了极速/大模型选择/画质 -->
+                    <span class="text2img-control-label">创作</span>
+                    <span class="text2img-control-label text-gray-500">材质 (敬请期待)</span>
                 </div>
                 <div class="text2img-control-group">
-                    <h4 class="mb-2">画幅</h4>
-                    <!-- 隐藏了所有画幅选项 -->
+                    <span class="text2img-control-label">质量</span>
+                    <select class="text2img-control-select" id="text2imgQualitySelect">
+                        <option value="speed">极速</option>
+                        <option value="standard" selected>画质</option>
+                    </select>
                 </div>
                 <div class="text2img-control-group">
-                    <h4 class="mb-2">分辨率</h4>
-                    <!-- 隐藏了1K/2K/4K -->
+                    <span class="text2img-control-label">画幅</span>
+                    <select class="text2img-control-select" id="text2imgAspectSelect">
+                        <option value="auto" selected>Auto</option>
+                    </select>
+                </div>
+                <div class="text2img-control-group">
+                    <span class="text2img-control-label">分辨率</span>
+                    <select class="text2img-control-select" id="text2imgResolutionSelect">
+                        <option value="1k" selected>1K</option>
+                    </select>
                 </div>
             </div>
+            
+            <!-- 提示词输入区 -->
             <div class="flex items-center gap-4">
                 <div class="flex-1 relative">
-                    <input id="text2imgPromptInput" type="text" placeholder="输入提示词..." class="w-full bg-[#1e212b] rounded px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-600">
+                    <button class="absolute left-2 top-1/2 transform -translate-y-1/2 bg-gray-700 rounded px-2 py-1 text-xs">↺</button>
+                    <input id="text2imgPromptInput" type="text" placeholder="描述你的创意灵感..." class="w-full bg-[#1e212b] rounded px-8 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-600">
                     <button id="text2imgPresetBtn" class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gray-700 rounded px-2 py-1 text-xs">预设</button>
+                </div>
+                <div class="batch-control">
+                    <span class="batch-btn">批量</span>
+                    <select class="control-select" id="text2imgBatchCountSelect">
+                        <option value="3">3张</option>
+                        <option value="6" selected>6张</option>
+                    </select>
                 </div>
                 <button id="text2imgGenerateBtn" class="px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 text-sm">
                     生成 <span id="text2imgScoreConsume">(消耗: 50积分)</span>
                 </button>
             </div>
+            
+            <!-- 生成结果区 -->
             <div id="text2imgResult" class="text2img-result">
                 <!-- 文字生图结果会显示在这里 -->
             </div>
@@ -731,22 +1052,29 @@
             document.body.style.cursor = '';
         });
 
-        // 1. 生成按钮积分显示
-        // 根据质量动态更新积分消耗（示例：默认50，可根据实际逻辑调整）
+        // 1. 生成按钮积分显示 - 根据质量动态更新
         let currentQuality = 'standard';
         const scoreConsumeEl = document.getElementById('scoreConsume');
         const text2imgScoreConsumeEl = document.getElementById('text2imgScoreConsume');
         
-        // 示例：切换质量时更新积分
         function updateScoreConsume(quality) {
             let score = 50;
             if (quality === 'high') score = 100;
             if (quality === 'ultra') score = 200;
+            if (quality === 'speed') score = 30;
             
             scoreConsumeEl.textContent = `(消耗: ${score}积分)`;
             text2imgScoreConsumeEl.textContent = `(消耗: ${score}积分)`;
             currentQuality = quality;
         }
+
+        // 绑定质量选择事件
+        document.getElementById('mainQualitySelect').addEventListener('change', function() {
+            updateScoreConsume(this.value);
+        });
+        document.getElementById('text2imgQualitySelect').addEventListener('change', function() {
+            updateScoreConsume(this.value);
+        });
 
         // 2. 提示词预设功能
         const presetBtn = document.getElementById('presetBtn');
@@ -763,7 +1091,6 @@
 
         text2imgPresetBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            // 复用相同的预设列表（可自定义）
             promptPresets.style.display = promptPresets.style.display === 'flex' ? 'none' : 'flex';
         });
 
@@ -803,34 +1130,99 @@
                     }
                     promptPresets.style.display = 'none';
                 });
-                // 插入到添加按钮前
                 promptPresets.insertBefore(newPreset, document.querySelector('.preset-item[onclick]'));
             }
         }
 
-        // 3. 图片预览修改功能
+        // 3. 图片预览修改功能增强
         const previewModal = document.getElementById('previewModal');
         const previewImage = document.getElementById('previewImage');
+        const previewImgContainer = document.getElementById('previewImgContainer');
         const closePreviewBtn = document.getElementById('closePreviewBtn');
         const compareBtn = document.getElementById('compareBtn');
+        const zoomBtn = document.getElementById('zoomBtn');
+        const moveBtn = document.getElementById('moveBtn');
         const downloadBtn = document.getElementById('downloadBtn');
         const deleteBtn = document.getElementById('deleteBtn');
         const lassoBtn = document.getElementById('lassoBtn');
         const lassoTool = document.getElementById('lassoTool');
         const previewEditInput = document.getElementById('previewEditInput');
         const applyEditBtn = document.getElementById('applyEditBtn');
-        const colorBlocks = document.querySelectorAll('.color-block');
+        const previewPromptGenerateBtn = document.getElementById('previewPromptGenerateBtn');
         
-        // 遮罩颜色选择
-        colorBlocks.forEach(block => {
-            block.addEventListener('click', () => {
-                colorBlocks.forEach(b => b.classList.remove('active'));
-                block.classList.add('active');
-                // 实际项目中这里会设置涂抹遮罩的颜色
-                console.log('选择遮罩颜色:', block.getAttribute('data-color'));
-            });
+        // 图片缩放和移动功能
+        let scale = 1;
+        let isMoving = false;
+        let startX, startY, translateX = 0, translateY = 0;
+        
+        // 滚轮缩放
+        previewModal.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? -0.1 : 0.1;
+            scale = Math.max(0.1, Math.min(scale + delta, 5));
+            previewImgContainer.style.transform = `scale(${scale}) translate(${translateX}px, ${translateY}px)`;
         });
-
+        
+        // 空格键+鼠标移动图片
+        let isSpacePressed = false;
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && previewModal.style.display === 'flex') {
+                isSpacePressed = true;
+                document.body.style.cursor = 'move';
+            }
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            if (e.code === 'Space') {
+                isSpacePressed = false;
+                isMoving = false;
+                document.body.style.cursor = '';
+            }
+        });
+        
+        previewImgContainer.addEventListener('mousedown', (e) => {
+            if (isSpacePressed) {
+                e.preventDefault();
+                isMoving = true;
+                startX = e.clientX - translateX;
+                startY = e.clientY - translateY;
+            }
+        });
+        
+        document.addEventListener('mousemove', (e) => {
+            if (isMoving && isSpacePressed) {
+                translateX = e.clientX - startX;
+                translateY = e.clientY - startY;
+                previewImgContainer.style.transform = `scale(${scale}) translate(${translateX}px, ${translateY}px)`;
+            }
+        });
+        
+        document.addEventListener('mouseup', () => {
+            isMoving = false;
+        });
+        
+        // 缩放按钮切换
+        zoomBtn.addEventListener('click', () => {
+            scale = scale === 1 ? 2 : 1;
+            translateX = 0;
+            translateY = 0;
+            previewImgContainer.style.transform = `scale(${scale}) translate(${translateX}px, ${translateY}px)`;
+            zoomBtn.style.background = scale !== 1 ? '#4b5563' : '#1e212b';
+        });
+        
+        // 移动按钮切换
+        moveBtn.addEventListener('click', () => {
+            isSpacePressed = !isSpacePressed;
+            moveBtn.style.background = isSpacePressed ? '#4b5563' : '#1e212b';
+            document.body.style.cursor = isSpacePressed ? 'move' : '';
+        });
+        
+        // 提示词生成按钮
+        previewPromptGenerateBtn.addEventListener('click', () => {
+            alert('提示词已生成！可直接使用或修改后应用');
+        });
+        
         // 套索工具
         let isLassoActive = false;
         let lassoStartX = 0;
@@ -842,7 +1234,6 @@
             lassoTool.style.display = isLassoActive ? 'block' : 'none';
         });
 
-        // 套索绘制
         previewModal.addEventListener('mousedown', (e) => {
             if (!isLassoActive) return;
             
@@ -879,22 +1270,20 @@
             document.addEventListener('mouseup', onMouseUp);
         });
 
-        // 滚轮调整画笔大小（示例）
-        previewModal.addEventListener('wheel', (e) => {
-            // 实际项目中这里会调整画笔大小
-            const delta = e.deltaY > 0 ? -1 : 1; // 上滚增大，下滚减小
-            console.log('画笔大小调整:', delta);
-            e.preventDefault();
-        });
-
         // 打开预览
         document.querySelectorAll('.result-img-item img').forEach(img => {
             img.addEventListener('click', () => {
                 previewImage.src = img.src;
                 previewModal.style.display = 'flex';
-                // 存储当前图片元素
                 previewModal.setAttribute('data-img-src', img.src);
                 previewModal.setAttribute('data-img-parent', img.parentElement);
+                // 重置缩放和位置
+                scale = 1;
+                translateX = 0;
+                translateY = 0;
+                previewImgContainer.style.transform = `scale(${scale}) translate(${translateX}px, ${translateY}px)`;
+                isSpacePressed = false;
+                isMoving = false;
             });
         });
 
@@ -904,13 +1293,15 @@
             isLassoActive = false;
             lassoBtn.style.background = '#1e212b';
             lassoTool.style.display = 'none';
+            isSpacePressed = false;
+            isMoving = false;
+            document.body.style.cursor = '';
         });
 
         // 原图/现图对比
         let isOriginal = true;
         compareBtn.addEventListener('click', () => {
             isOriginal = !isOriginal;
-            // 实际项目中切换原图和修改后的图
             compareBtn.style.background = isOriginal ? '#4b5563' : '#1e212b';
             console.log('切换对比:', isOriginal ? '原图' : '现图');
         });
@@ -935,11 +1326,24 @@
             const editPrompt = previewEditInput.value;
             if (editPrompt) {
                 console.log('应用修改提示词:', editPrompt);
-                // 实际项目中发送修改请求
                 alert('修改已应用！');
             } else {
                 alert('请输入修改提示词！');
             }
+        });
+
+        // 4. 右侧预设键点击常亮+自动填充提示词
+        const presetButtons = document.querySelectorAll('.preset-btn');
+        presetButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                // 移除所有按钮的激活状态
+                presetButtons.forEach(b => b.classList.remove('preset-btn-active'));
+                // 添加当前按钮的激活状态
+                this.classList.add('preset-btn-active');
+                // 自动填充对应的提示词
+                const prompt = this.getAttribute('data-prompt');
+                promptInput.value = prompt;
+            });
         });
 
         // 5. 生成结果区图片拖拽排序和删除/下载
@@ -1008,10 +1412,103 @@
             });
         });
 
-        // 6. 操作区多张图片管理
+        // 6. 操作区多张图片管理 + 外部拖拽功能
         const operateContainer = document.getElementById('operateImagesContainer');
         const addImageBtn = document.getElementById('addImageBtn');
+        const operateDropArea = document.getElementById('operateDropArea');
         
+        // 阻止默认拖拽行为
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            operateDropArea.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
+            text2imgDragArea.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        // 高亮拖拽区域
+        ['dragenter', 'dragover'].forEach(eventName => {
+            operateDropArea.addEventListener(eventName, highlight, false);
+            text2imgDragArea.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            operateDropArea.addEventListener(eventName, unhighlight, false);
+            text2imgDragArea.addEventListener(eventName, unhighlight, false);
+        });
+        
+        function highlight() {
+            operateDropArea.classList.add('bg-gray-800/50');
+            text2imgDragArea.classList.add('bg-gray-800/50');
+        }
+        
+        function unhighlight() {
+            operateDropArea.classList.remove('bg-gray-800/50');
+            text2imgDragArea.classList.remove('bg-gray-800/50');
+        }
+        
+        // 处理文件拖放
+        operateDropArea.addEventListener('drop', handleDrop, false);
+        text2imgDragArea.addEventListener('drop', handleText2imgDrop, false);
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length) {
+                handleFiles(files);
+            }
+        }
+        
+        function handleText2imgDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length) {
+                // 自动切换到主界面操作区
+                document.getElementById('text2imgInterface').style.display = 'none';
+                handleFiles(files);
+            }
+        }
+        
+        function handleFiles(files) {
+            [...files].forEach(file => {
+                if (!file.type.match('image.*')) return;
+                
+                const imgCount = operateContainer.children.length;
+                if (imgCount >= 12) {
+                    alert('最多只能添加12张图片！');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const newImgItem = document.createElement('div');
+                    newImgItem.className = 'operate-img-item';
+                    newImgItem.draggable = true;
+                    
+                    const imgNumber = document.createElement('div');
+                    imgNumber.className = 'operate-img-number';
+                    imgNumber.textContent = imgCount + 1;
+                    
+                    const img = document.createElement('img');
+                    img.className = 'operate-img';
+                    img.src = e.target.result;
+                    img.alt = `操作图片${imgCount + 1}`;
+                    
+                    newImgItem.appendChild(imgNumber);
+                    newImgItem.appendChild(img);
+                    operateContainer.appendChild(newImgItem);
+                    
+                    updateOperateImageNumbers();
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
         // 添加图片
         addImageBtn.addEventListener('click', () => {
             const imgCount = operateContainer.children.length;
@@ -1037,7 +1534,6 @@
             newImgItem.appendChild(img);
             operateContainer.appendChild(newImgItem);
             
-            // 更新数字编号
             updateOperateImageNumbers();
         });
 
@@ -1098,7 +1594,6 @@
                     return;
                 }
                 
-                // 复制图片到操作区
                 const imgSrc = draggedItem.querySelector('img').src;
                 const newImgItem = document.createElement('div');
                 newImgItem.className = 'operate-img-item';
@@ -1125,6 +1620,7 @@
         const backToText2Img = document.getElementById('backToText2Img');
         const text2imgInterface = document.getElementById('text2imgInterface');
         const closeText2ImgBtn = document.getElementById('closeText2ImgBtn');
+        const text2imgDragArea = document.getElementById('text2imgDragArea');
         
         backToText2Img.addEventListener('click', () => {
             text2imgInterface.style.display = 'flex';
@@ -1196,6 +1692,9 @@
             
             // 添加到主界面生成结果区
             resultContainer.appendChild(newResultImg);
+            
+            // 自动切换到主界面操作区
+            text2imgInterface.style.display = 'none';
             
             alert('文字生图完成，结果已同步到主界面！');
         });
@@ -1299,7 +1798,6 @@
         }
 
         inviteBtn.addEventListener('click', () => {
-            // 每次点击生成新的邀请码
             inviteCode.textContent = generateInviteCode();
             inviteModal.style.display = 'block';
         });
@@ -1315,6 +1813,30 @@
                 alert('邀请码已复制！');
             });
         }
+
+        // 13. 文档教程按钮
+        document.getElementById('docTutorialBtn').addEventListener('click', () => {
+            alert('文档教程功能即将上线，敬请期待！');
+        });
+
+        // 14. 修改工具面板颜色选择
+        document.querySelectorAll('.tool-color-block').forEach(block => {
+            block.addEventListener('click', function() {
+                // 找到同组的所有颜色块
+                const siblings = this.parentElement.querySelectorAll('.tool-color-block');
+                siblings.forEach(s => s.classList.remove('active'));
+                this.classList.add('active');
+                console.log('选择颜色:', this.getAttribute('data-color'));
+            });
+        });
+
+        // 15. 橡皮擦和撤销按钮
+        document.getElementById('eraserBtn').addEventListener('click', () => {
+            alert('橡皮擦工具已激活！');
+        });
+        document.getElementById('undoBtn').addEventListener('click', () => {
+            alert('已撤销上一步操作！');
+        });
     </script>
 </body>
 </html>
