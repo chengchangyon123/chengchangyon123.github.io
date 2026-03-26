@@ -676,6 +676,7 @@
                 <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="软装分析图，家具布局，风格搭配，色彩协调">软装分析</button>
                 <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="地域分析图，文化元素，地域特色，空间融合">地域分析</button>
                 <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="概念推演效果，创意可视化，逐步呈现，逻辑清晰">概念推演</button>
+                <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="多功能岛台，大理石台面，台面上有水池，电池炉">产品定制</button>
             </div>
         </aside>
     </main>
@@ -1672,7 +1673,273 @@ function initResultImagesDraggable() {
 
 // 页面加载完成后初始化
 window.addEventListener('load', initResultImagesDraggable);
-</script>
-</body>
-</html></body>
-</html>
+        </aside> <!-- 补全右侧预设区的aside闭合标签 -->
+    </main> <!-- 补全main主内容区的闭合标签 -->
+
+    
+    <script>
+    // ========== 全局变量初始化 ==========
+    let draggedItem = null;
+    let placeholder = null;
+    // 操作区/结果区DOM元素（确保DOM加载完成后获取）
+    let operateImagesContainer, leftPanel, resultImagesContainer, addImageBtn;
+
+    // 页面加载完成后初始化所有功能
+    window.addEventListener('DOMContentLoaded', () => {
+        // 初始化DOM元素
+        operateImagesContainer = document.getElementById('operateImagesContainer');
+        leftPanel = document.getElementById('leftPanel');
+        resultImagesContainer = document.getElementById('resultImagesContainer');
+        addImageBtn = document.getElementById('addImageBtn');
+
+        // 初始化所有功能
+        initDragExternalImages();    // 外部拖拽图片
+        initAddImageButton();        // +号上传图片
+        initDragSortOperateImages(); // 操作区拖拽排序
+        initDragResultToOperate();   // 结果区拖拽到操作区
+        initDeleteImageByDel();      // DEL键删除图片
+    });
+
+    // ========== 1. 修复：外部软件拖拽图片到操作区 ==========
+    function initDragExternalImages() {
+        // 阻止默认拖拽行为（核心修复：覆盖所有拖拽事件）
+        const dragTargets = [leftPanel, operateImagesContainer];
+        dragTargets.forEach(target => {
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                target.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }, false);
+            });
+
+            // 拖拽进入高亮
+            target.addEventListener('dragenter', () => {
+                operateImagesContainer.parentElement.style.borderColor = '#3b82f6';
+            }, false);
+
+            // 拖拽离开取消高亮
+            target.addEventListener('dragleave', () => {
+                if (!operateImagesContainer.parentElement.contains(event.relatedTarget)) {
+                    operateImagesContainer.parentElement.style.borderColor = '#374151';
+                }
+            }, false);
+        });
+
+        // 核心：处理放下图片逻辑（修复文件读取逻辑）
+        operateImagesContainer.addEventListener('drop', (e) => {
+            operateImagesContainer.parentElement.style.borderColor = '#374151';
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                Array.from(files).forEach(file => {
+                    if (file.type.startsWith('image/')) {
+                        addImageToOperateArea(file);
+                    }
+                });
+            }
+        }, false);
+    }
+
+    // ========== 2. 修复：+号按钮上传本地图片 ==========
+    function initAddImageButton() {
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*';
+        fileInput.multiple = true;
+
+        addImageBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', () => {
+            Array.from(fileInput.files).forEach(file => {
+                if (file.type.startsWith('image/')) {
+                    addImageToOperateArea(file);
+                }
+            });
+            // 重置input（否则重复选择同一张图片不触发change）
+            fileInput.value = '';
+        });
+    }
+
+    // ========== 核心函数：添加图片到操作区（修复序号和拖拽绑定） ==========
+    function addImageToOperateArea(fileOrSrc) {
+        const imgItem = document.createElement('div');
+        imgItem.className = 'operate-img-item';
+        imgItem.draggable = true; // 开启拖拽
+        imgItem.tabIndex = 0; // 允许获取焦点（用于DEL删除）
+
+        // 图片序号
+        const imgNumber = document.createElement('div');
+        imgNumber.className = 'operate-img-number';
+        const newIndex = operateImagesContainer.children.length + 1;
+        imgNumber.textContent = newIndex;
+
+        // 图片元素
+        const img = document.createElement('img');
+        img.className = 'operate-img';
+        img.alt = `操作区图片${newIndex}`;
+
+        // 区分是文件（外部拖拽/上传）还是URL（结果区拖拽）
+        if (fileOrSrc instanceof File) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(fileOrSrc);
+        } else {
+            img.src = fileOrSrc; // 直接赋值URL
+        }
+
+        imgItem.appendChild(imgNumber);
+        imgItem.appendChild(img);
+        operateImagesContainer.appendChild(imgItem);
+
+        // 绑定拖拽排序事件（修复：立即绑定）
+        bindDragEventsToItem(imgItem);
+        // 更新所有序号
+        updateOperateImageNumbers();
+    }
+
+    // ========== 3. 修复：操作区图片拖拽排序 ==========
+    function initDragSortOperateImages() {
+        // 监听操作区的拖拽事件（事件委托，兼容动态添加的图片）
+        operateImagesContainer.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (draggedItem && placeholder) {
+                const targetItem = e.target.closest('.operate-img-item');
+                if (targetItem && targetItem !== draggedItem) {
+                    const rect = targetItem.getBoundingClientRect();
+                    const midY = rect.top + rect.height / 2;
+                    // 插入占位符
+                    if (e.clientY < midY) {
+                        targetItem.before(placeholder);
+                    } else {
+                        targetItem.after(placeholder);
+                    }
+                }
+            }
+        });
+
+        operateImagesContainer.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (draggedItem && placeholder) {
+                // 插入拖拽的元素
+                placeholder.replaceWith(draggedItem);
+                // 移除占位符
+                placeholder.remove();
+                placeholder = null;
+                // 更新序号
+                updateOperateImageNumbers();
+            }
+            // 恢复样式
+            if (draggedItem) {
+                draggedItem.classList.remove('img-item-dragging');
+                draggedItem = null;
+            }
+        });
+    }
+
+    // 绑定单个图片项的拖拽事件（修复拖拽逻辑）
+    function bindDragEventsToItem(item) {
+        // 开始拖拽
+        item.addEventListener('dragstart', (e) => {
+            draggedItem = item;
+            item.classList.add('img-item-dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            // 创建占位符
+            placeholder = document.createElement('div');
+            placeholder.className = 'img-drop-placeholder';
+            placeholder.style.height = `${item.offsetHeight}px`;
+            placeholder.style.width = `${item.offsetWidth}px`;
+        });
+
+        // 拖拽结束
+        item.addEventListener('dragend', () => {
+            if (placeholder) placeholder.remove();
+            placeholder = null;
+            draggedItem = null;
+            item.classList.remove('img-item-dragging');
+        });
+
+        // 点击图片聚焦（用于DEL删除）
+        item.addEventListener('click', () => {
+            // 取消其他图片的选中状态
+            document.querySelectorAll('.operate-img-item').forEach(el => {
+                el.style.outline = 'none';
+            });
+            // 高亮当前选中的图片
+            item.style.outline = '2px solid #3b82f6';
+            item.focus();
+        });
+    }
+
+    // 更新操作区图片序号（修复序号计算）
+    function updateOperateImageNumbers() {
+        const items = operateImagesContainer.querySelectorAll('.operate-img-item');
+        items.forEach((item, index) => {
+            const numberEl = item.querySelector('.operate-img-number');
+            numberEl.textContent = index + 1;
+        });
+    }
+
+    // ========== 4. 修复：结果区图片拖拽到操作区 ==========
+    function initDragResultToOperate() {
+        // 为结果区所有图片开启拖拽（事件委托）
+        resultImagesContainer.addEventListener('dragstart', (e) => {
+            const resultItem = e.target.closest('.result-img-item');
+            if (resultItem) {
+                const img = resultItem.querySelector('img');
+                if (img) {
+                    e.dataTransfer.setData('text/plain', img.src);
+                    e.dataTransfer.effectAllowed = 'copy';
+                    resultItem.style.opacity = '0.5';
+                }
+            }
+        });
+
+        resultImagesContainer.addEventListener('dragend', (e) => {
+            const resultItem = e.target.closest('.result-img-item');
+            if (resultItem) {
+                resultItem.style.opacity = '1';
+            }
+        });
+
+        // 操作区接收结果区图片
+        operateImagesContainer.addEventListener('drop', (e) => {
+            const imgSrc = e.dataTransfer.getData('text/plain');
+            if (imgSrc && (imgSrc.startsWith('http') || imgSrc.startsWith('data:image'))) {
+                addImageToOperateArea(imgSrc);
+            }
+        });
+    }
+
+    // ========== 新增：DEL键删除选中的操作区图片 ==========
+    function initDeleteImageByDel() {
+        document.addEventListener('keydown', (e) => {
+            // 仅当按下DEL/Backspace键，且有选中的图片时触发
+            if ((e.key === 'Delete' || e.key === 'Backspace') && document.activeElement.classList.contains('operate-img-item')) {
+                e.preventDefault();
+                const selectedItem = document.activeElement;
+                selectedItem.remove();
+                // 更新序号
+                updateOperateImageNumbers();
+            }
+        });
+    }
+
+    // ========== 初始化结果区图片可拖拽（如果有默认图片） ==========
+    function initResultImagesDraggable() {
+        const resultItems = resultImagesContainer.querySelectorAll('.result-img-item');
+        resultItems.forEach(item => {
+            item.draggable = true;
+        });
+    }
+    window.addEventListener('load', initResultImagesDraggable);
+    </script>
+    </body> <!-- 闭合body标签 -->
+    </html> <!-- 闭合html标签 -->
+    </body>
+    </html></body>
+    </html>
