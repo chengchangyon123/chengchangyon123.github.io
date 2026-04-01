@@ -1,1783 +1,373 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 设计工具</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body {
-            background-color: #0f1117;
-            color: #e2e8f0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        .panel-hover { transition: all 0.2s ease; }
-        .panel-hover:hover { border-color: #4b5563; }
+import React, { useState, useRef, useEffect } from 'react';
+import { Upload, Button, Dropdown, Menu, Tabs, Input, Select, Switch, message, Modal } from 'antd';
+import { 
+  UploadOutlined, DeleteOutlined, SaveOutlined, DownloadOutlined, ZoomInOutlined, 
+  HistoryOutlined, UserOutlined, CoinOutlined, GlobeOutlined, BookOutlined, 
+  ShareAltOutlined, RefreshOutlined, PaletteOutlined, LayoutOutlined, CameraOutlined
+} from '@ant-design/icons';
+import 'antd/dist/reset.css';
+import './AIDesignAgent.css'; // 需单独创建样式文件
 
-        /* 拖拽分割条样式 */
-        .gutter {
-            background-color: #1e212b;
-            cursor: col-resize;
-            width: 6px;
-            margin: 0 -3px;
-            border-left: 1px solid #374151;
-            border-right: 1px solid #374151;
-            position: relative;
-            z-index: 10;
-            transition: background 0.2s;
-        }
-        .gutter:hover { background-color: #4b5563; }
-        .gutter::after {
-            content: "||";
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 10px;
-            color: #6b7280;
-            letter-spacing: 1px;
-        }
+// 定义类型接口
+interface ImageItem {
+  id: string;
+  url: string;
+  name: string;
+  isWorkspace: boolean; // 是否在工作区
+  index: number; // 排序索引
+}
 
-        /* 新增样式 */
-        /* 图片预览模态框 */
-        .preview-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.9);
-            z-index: 100;
-            display: none;
-            flex-direction: column;
-            padding: 20px;
-        }
-        .preview-content {
-            flex: 1;
-            display: flex;
-            position: relative;
-        }
-        .preview-img {
-            max-width: 80%;
-            max-height: 80%;
-            margin: auto;
-            object-contain;
-        }
-        .preview-controls {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            gap: 10px;
-        }
-        .preview-control-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #1e212b;
-            border: 1px solid #374151;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .preview-control-btn:hover {
-            background: #4b5563;
-        }
-        .mask-color-picker {
-            position: absolute;
-            top: 50%;
-            left: 20px;
-            transform: translateY(-50%);
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .color-block {
-            width: 30px;
-            height: 30px;
-            border-radius: 4px;
-            cursor: pointer;
-            border: 2px solid transparent;
-        }
-        .color-block.active {
-            border-color: #ffffff;
-        }
-        .preview-edit-input {
-            width: 80%;
-            margin: 20px auto 0;
-            background: #1e212b;
-            border: 1px solid #374151;
-            border-radius: 4px;
-            padding: 10px;
-            color: #e2e8f0;
-        }
-        .lasso-tool {
-            position: absolute;
-            border: 1px dashed #ffffff;
-            background: rgba(255,255,255,0.1);
-            pointer-events: none;
-            display: none;
-        }
+interface HistoryTask {
+  id: string;
+  name: string;
+  createTime: string;
+  images: ImageItem[];
+}
 
-        /* 操作区图片容器 */
-        .operate-images {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            height: 100%;
-            overflow-y: auto;
-        }
-        .operate-img-item {
-            position: relative;
-            aspect-ratio: 4/3;
-            border-radius: 4px;
-            overflow: hidden;
-            background: #1e212b;
-        }
-        .operate-img-number {
-            position: absolute;
-            top: 4px;
-            left: 4px;
-            width: 20px;
-            height: 20px;
-            background: #0f1117;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: bold;
-            cursor: move;
-            z-index: 1;
-        }
-        .operate-img {
-            width: 100%;
-            height: 100%;
-            object-cover;
-        }
+interface ToolItem {
+  key: string;
+  name: string;
+  icon: React.ReactNode;
+}
 
-        /* 生成结果区图片样式 */
-        .result-img-item {
-            position: relative;
-            cursor: move;
-        }
-        .result-img-controls {
-            position: absolute;
-            top: 4px;
-            right: 4px;
-            display: flex;
-            gap: 4px;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-        .result-img-item:hover .result-img-controls {
-            opacity: 1;
-        }
-        .result-img-btn {
-            width: 24px;
-            height: 24px;
-            border-radius: 4px;
-            background: #1e212b;
-            border: 1px solid #374151;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 12px;
-        }
+const AIDesignAgent: React.FC = () => {
+  // 状态管理
+  const [workspaceImages, setWorkspaceImages] = useState<ImageItem[]>([]); // 工作区图片
+  const [resultImages, setResultImages] = useState<ImageItem[]>([]); // 生成结果区图片
+  const [totalImages, setTotalImages] = useState<number>(0); // 总图片数（≤16）
+  const [activeTask, setActiveTask] = useState<HistoryTask | null>(null); // 当前激活任务
+  const [historyTasks, setHistoryTasks] = useState<HistoryTask[]>([]); // 历史任务
+  const [isLogin, setIsLogin] = useState<boolean>(false); // 登录状态
+  const [language, setLanguage] = useState<'zh' | 'en'>('zh'); // 语言切换
+  const [quality, setQuality] = useState<'fast' | '1k' | '2k' | '4k'>('fast'); // 画质设置
+  const [batchCount, setBatchCount] = useState<3 | 4 | 5 | 6>(3); // 批量生成数量
+  const [isModifyMode, setIsModifyMode] = useState<boolean>(false); // 修改模式
+  const [currentModifyImage, setCurrentModifyImage] = useState<ImageItem | null>(null); // 当前修改图片
+  const [prompt, setPrompt] = useState<string>(''); // 提示词输入
+  const workspaceRef = useRef<HTMLDivElement>(null); // 工作区DOM引用
 
-        /* 预设提示词弹窗 */
-        .prompt-presets {
-            position: absolute;
-            bottom: 100%;
-            right: 0;
-            width: 300px;
-            background: #1e212b;
-            border: 1px solid #374151;
-            border-radius: 4px;
-            padding: 10px;
-            display: none;
-            flex-direction: column;
-            gap: 8px;
-            z-index: 5;
-        }
-        .preset-item {
-            padding: 8px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .preset-item:hover {
-            background: #374151;
-        }
-        /* 预设按钮激活状态 */
-        .preset-btn.active {
-            background: #4b5563;
-        }
+  // 预设工具列表
+  const toolList: ToolItem[] = [
+    { key: 'merge', name: '超级融合', icon: <LayoutOutlined /> },
+    { key: 'layout', name: '平面布置', icon: <PaletteOutlined /> },
+    { key: 'shot', name: '空间分镜', icon: <CameraOutlined /> },
+    { key: 'su', name: 'SU效果图', icon: <ZoomInOutlined /> },
+    { key: 'material', name: '材料排版', icon: <PaletteOutlined /> },
+  ];
 
-        /* 历史记录界面 */
-        .history-interface {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #0f1117;
-            z-index: 200;
-            display: none;
-            flex-direction: column;
-            padding: 20px;
-        }
-        .history-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #374151;
-        }
-        .history-close {
-            padding: 8px 16px;
-            background: #4b5563;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .history-packages {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            overflow-y: auto;
-            flex: 1;
-        }
-        .history-package {
-            background: #1e212b;
-            border-radius: 8px;
-            padding: 16px;
-        }
-        .package-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        .package-date {
-            font-weight: bold;
-        }
-        .package-delete {
-            color: #ef4444;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        .package-images {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 8px;
-        }
-        .package-img-item {
-            position: relative;
-            aspect-ratio: 4/3;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        .package-img {
-            width: 100%;
-            height: 100%;
-            object-cover;
-        }
-        .package-img-delete {
-            position: absolute;
-            top: 4px;
-            right: 4px;
-            width: 20px;
-            height: 20px;
-            background: rgba(0,0,0,0.7);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 12px;
-            color: #ef4444;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-        .package-img-item:hover .package-img-delete {
-            opacity: 1;
-        }
+  // 初始化：创建默认任务
+  useEffect(() => {
+    const defaultTask: HistoryTask = {
+      id: 'task_001',
+      name: '默认任务',
+      createTime: new Date().toLocaleString(),
+      images: [],
+    };
+    setActiveTask(defaultTask);
+    setHistoryTasks([defaultTask]);
+  }, []);
 
-        /* 文字生图界面（创作风暴） */
-        .text2img-interface {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #0f1117;
-            z-index: 150;
-            display: none;
-            flex-direction: column;
-            padding: 20px;
-        }
-        .text2img-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #374151;
-        }
-        .text2img-close {
-            padding: 8px 16px;
-            background: #4b5563;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .text2img-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        /* 创作风暴主区域 */
-        .creation-storm-main {
-            flex: 1;
-            border: 2px dashed #374151;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #9ca3af;
-            font-size: 14px;
-            text-align: center;
-            padding: 20px;
-            position: relative;
-        }
-        .creation-storm-tips {
-            max-width: 600px;
-            line-height: 1.6;
-        }
-        /* 底部控制栏 */
-        .bottom-controls {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            background: #12141a;
-            padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 10px;
-        }
-        .control-group {
-            background: #1e212b;
-            padding: 8px 12px;
-            border-radius: 4px;
-            min-width: 120px;
-        }
-        .control-group label {
-            font-size: 12px;
-            color: #9ca3af;
-            margin-right: 8px;
-        }
-        .control-group select {
-            background: #0f1117;
-            border: 1px solid #374151;
-            border-radius: 4px;
-            padding: 4px 8px;
-            color: #e2e8f0;
-            font-size: 12px;
-        }
+  // 图片拖拽逻辑：工作区↔结果区
+  const handleImageDrag = (image: ImageItem, target: 'workspace' | 'result') => {
+    if (totalImages >= 16) {
+      message.warning(language === 'zh' ? '最多支持加载16张图片' : 'Maximum 16 images allowed');
+      return;
+    }
 
-        /* 邀请码弹窗 */
-        .invite-modal {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #1e212b;
-            border: 1px solid #374151;
-            border-radius: 8px;
-            padding: 20px;
-            z-index: 200;
-            display: none;
-            min-width: 300px;
-        }
-        .invite-content {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        .invite-code {
-            padding: 10px;
-            background: #0f1117;
-            border-radius: 4px;
-            font-family: monospace;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .copy-btn {
-            padding: 4px 8px;
-            background: #374151;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-        .invite-close {
-            align-self: flex-end;
-            padding: 8px 16px;
-            background: #4b5563;
-            border-radius: 4px;
-            cursor: pointer;
-        }
+    if (target === 'workspace') {
+      // 结果区→工作区
+      setResultImages(prev => prev.filter(item => item.id !== image.id));
+      const newImage = { ...image, isWorkspace: true, index: workspaceImages.length + 1 };
+      setWorkspaceImages(prev => [...prev, newImage]);
+      updateActiveTaskImages([...workspaceImages, newImage], resultImages.filter(item => item.id !== image.id));
+    } else {
+      // 工作区→结果区（仅允许生成结果区图片放回）
+      if (image.isWorkspace && resultImages.some(item => item.id === image.id)) return;
+      setWorkspaceImages(prev => prev.filter(item => item.id !== image.id));
+      const newImage = { ...image, isWorkspace: false };
+      setResultImages(prev => [...prev, newImage]);
+      updateActiveTaskImages(workspaceImages.filter(item => item.id !== image.id), [...resultImages, newImage]);
+    }
+    setTotalImages(workspaceImages.length + resultImages.length);
+  };
 
-        /* 积分相关弹窗 */
-        .score-modal {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #1e212b;
-            border: 1px solid #374151;
-            border-radius: 8px;
-            padding: 20px;
-            z-index: 200;
-            display: none;
-            min-width: 400px;
-        }
-        .score-content {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        .score-close {
-            align-self: flex-end;
-            padding: 8px 16px;
-            background: #4b5563;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .recharge-link {
-            color: #3b82f6;
-            text-decoration: underline;
-            cursor: pointer;
-        }
+  // 上传图片（本地上传/第三方拖拽）
+  const handleUpload = (file: File) => {
+    if (totalImages >= 16) {
+      message.warning(language === 'zh' ? '最多支持加载16张图片' : 'Maximum 16 images allowed');
+      return false;
+    }
+    const imageUrl = URL.createObjectURL(file);
+    const newImage: ImageItem = {
+      id: `img_${Date.now()}`,
+      url: imageUrl,
+      name: file.name,
+      isWorkspace: false,
+      index: resultImages.length + 1,
+    };
+    setResultImages(prev => [...prev, newImage]);
+    updateActiveTaskImages(workspaceImages, [...resultImages, newImage]);
+    setTotalImages(prev => prev + 1);
+    return false; // 阻止antd默认上传行为
+  };
 
-        /* 登录弹窗 */
-        .login-modal {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #1e212b;
-            border: 1px solid #374151;
-            border-radius: 8px;
-            padding: 25px;
-            z-index: 250;
-            display: none;
-            min-width: 400px;
-        }
-        .login-content {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        .login-tabs {
-            display: flex;
-            border-bottom: 1px solid #374151;
-            padding-bottom: 10px;
-            gap: 20px;
-        }
-        .login-tab {
-            cursor: pointer;
-            padding: 5px 0;
-            font-weight: 500;
-            color: #9ca3af;
-        }
-        .login-tab.active {
-            color: #e2e8f0;
-            border-bottom: 2px solid #3b82f6;
-        }
-        .login-form, .register-form, .qrcode-login {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        .form-group label {
-            font-size: 14px;
-            color: #9ca3af;
-        }
-        .form-group input {
-            background: #0f1117;
-            border: 1px solid #374151;
-            border-radius: 4px;
-            padding: 10px;
-            color: #e2e8f0;
-        }
-        .form-btn {
-            background: #3b82f6;
-            border: none;
-            border-radius: 4px;
-            padding: 10px;
-            color: white;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .form-btn:hover {
-            background: #2563eb;
-        }
-        .form-switch {
-            text-align: center;
-            font-size: 13px;
-            color: #9ca3af;
-        }
-        .form-switch span {
-            color: #3b82f6;
-            cursor: pointer;
-            text-decoration: underline;
-        }
-        .qrcode-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-        }
-        .qrcode-img {
-            width: 200px;
-            height: 200px;
-            background: #0f1117;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #9ca3af;
-        }
-        .login-close {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            color: #9ca3af;
-        }
-    </style>
-</head>
-<body class="h-screen flex flex-col overflow-hidden">
-    <!-- 顶部导航 -->
-    <header class="h-12 flex items-center justify-between px-4 border-b border-gray-800 bg-[#12141a]">
-        <div class="flex items-center gap-2">
-            <button class="p-2 rounded hover:bg-gray-800">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                </svg>
-            </button>
-            <span id="backToText2Img" class="text-sm text-gray-400 cursor-pointer font-medium">创作风暴</span>
+  // 更新当前任务的图片
+  const updateActiveTaskImages = (workspace: ImageItem[], result: ImageItem[]) => {
+    if (!activeTask) return;
+    const updatedTask = {
+      ...activeTask,
+      images: [...workspace, ...result],
+    };
+    setActiveTask(updatedTask);
+    setHistoryTasks(prev => prev.map(task => task.id === activeTask.id ? updatedTask : task));
+  };
+
+  // 删除图片
+  const handleDeleteImage = (imageId: string) => {
+    const isWorkspaceImg = workspaceImages.some(item => item.id === imageId);
+    if (isWorkspaceImg) {
+      setWorkspaceImages(prev => prev.filter(item => item.id !== imageId));
+    } else {
+      setResultImages(prev => prev.filter(item => item.id !== imageId));
+    }
+    updateActiveTaskImages(
+      workspaceImages.filter(item => item.id !== imageId),
+      resultImages.filter(item => item.id !== imageId)
+    );
+    setTotalImages(prev => prev - 1);
+  };
+
+  // 切换历史任务
+  const handleSwitchTask = (task: HistoryTask) => {
+    setActiveTask(task);
+    const workspaceImgs = task.images.filter(item => item.isWorkspace);
+    const resultImgs = task.images.filter(item => !item.isWorkspace);
+    setWorkspaceImages(workspaceImgs);
+    setResultImages(resultImgs);
+    setTotalImages(workspaceImgs.length + resultImgs.length);
+  };
+
+  // 生成图片（含超级融合）
+  const handleGenerate = (toolKey?: string) => {
+    if (toolKey === 'merge' && workspaceImages.length < 2) {
+      message.warning(language === 'zh' ? '超级融合至少需要2张工作区图片' : 'Super merge requires at least 2 workspace images');
+      return;
+    }
+    if (!toolKey && !prompt.trim()) {
+      message.warning(language === 'zh' ? '请输入生成提示词' : 'Please enter generation prompt');
+      return;
+    }
+
+    // 模拟生成逻辑（30秒内出结果）
+    message.info(language === 'zh' ? '正在生成图片...' : 'Generating images...');
+    setTimeout(() => {
+      const newGeneratedImages: ImageItem[] = [];
+      for (let i = 0; i < batchCount; i++) {
+        // 模拟生成图片URL（实际替换为AI生成接口返回的URL）
+        const mockUrl = `https://picsum.photos/800/600?random=${Date.now() + i}`;
+        newGeneratedImages.push({
+          id: `gen_img_${Date.now() + i}`,
+          url: mockUrl,
+          name: toolKey || '生成图片' + (i + 1),
+          isWorkspace: false,
+          index: resultImages.length + i + 1,
+        });
+      }
+      setResultImages(prev => [...prev, ...newGeneratedImages]);
+      updateActiveTaskImages(workspaceImages, [...resultImages, ...newGeneratedImages]);
+      setTotalImages(prev => prev + batchCount);
+      message.success(language === 'zh' ? '图片生成成功！' : 'Images generated successfully!');
+    }, 30000); // 模拟30秒生成时间
+  };
+
+  // 进入修改模式
+  const handleEnterModify = (image: ImageItem) => {
+    setIsModifyMode(true);
+    setCurrentModifyImage(image);
+  };
+
+  // 退出修改模式
+  const handleExitModify = () => {
+    setIsModifyMode(false);
+    setCurrentModifyImage(null);
+  };
+
+  // 保存修改后的图片
+  const handleSaveModify = () => {
+    if (!currentModifyImage) return;
+    // 模拟保存逻辑（实际替换为图片编辑接口）
+    setResultImages(prev => prev.map(item => item.id === currentModifyImage.id ? currentModifyImage : item));
+    setWorkspaceImages(prev => prev.map(item => item.id === currentModifyImage.id ? currentModifyImage : item));
+    updateActiveTaskImages(workspaceImages, resultImages);
+    message.success(language === 'zh' ? '图片修改保存成功！' : 'Image modification saved successfully!');
+    handleExitModify();
+  };
+
+  // 语言切换
+  const toggleLanguage = () => {
+    setLanguage(prev => prev === 'zh' ? 'en' : 'zh');
+  };
+
+  // 邀请好友弹窗
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const handleOpenInviteModal = () => setIsInviteModalOpen(true);
+  const handleCloseInviteModal = () => setIsInviteModalOpen(false);
+
+  return (
+    <div className="ai-design-agent">
+      {/* 顶部导航栏 */}
+      <header className="header">
+        <div className="logo" onClick={() => {
+          // 重置新任务
+          const newTask: HistoryTask = {
+            id: `task_${Date.now()}`,
+            name: '新任务_' + new Date().toLocaleString().slice(5, 10),
+            createTime: new Date().toLocaleString(),
+            images: [],
+          };
+          setActiveTask(newTask);
+          setHistoryTasks(prev => [...prev, newTask]);
+          setWorkspaceImages([]);
+          setResultImages([]);
+          setTotalImages(0);
+        }}>
+          <LayoutOutlined className="logo-icon" />
+          <span className="logo-text">{language === 'zh' ? 'AI设计智能体' : 'AI Design Agent'}</span>
         </div>
-        <div class="flex items-center gap-4">
-            <button id="inviteBtn" class="text-sm px-3 py-1 rounded hover:bg-gray-800">邀请加入</button>
-            <button id="resourceBtn" class="text-sm px-3 py-1 rounded hover:bg-gray-800">资源管理</button>
-            <!-- 新增登录按钮 -->
-            <button id="loginBtn" class="text-sm px-3 py-1 rounded hover:bg-gray-800">登录</button>
-            <div class="relative group">
-                <button id="scoreBtn" class="text-sm px-3 py-1 rounded bg-gray-800 hover:bg-gray-700 flex items-center gap-1">
-                    <span>积分</span> <!-- 移除积分数字 -->
-                </button>
-                <div class="absolute right-0 top-full mt-2 w-48 bg-[#1e212b] rounded shadow-lg border border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                    <div class="p-3 border-b border-gray-700">
-                        <p class="text-xs text-gray-400">当前积分</p> <!-- 移除积分数字 -->
+
+        <div className="header-right">
+          <Button 
+            icon={<ShareAltOutlined />} 
+            onClick={handleOpenInviteModal}
+            className="header-btn"
+          >
+            {language === 'zh' ? '邀请好友' : 'Invite Friends'}
+          </Button>
+          <Button 
+            icon={<BookOutlined />} 
+            className="header-btn"
+          >
+            {language === 'zh' ? '使用教程' : 'Tutorial'}
+          </Button>
+          <Button 
+            icon={<GlobeOutlined />} 
+            onClick={toggleLanguage}
+            className="header-btn"
+          >
+            {language === 'zh' ? '中文' : 'English'}
+          </Button>
+          {isLogin ? (
+            <Dropdown 
+              overlay={
+                <Menu>
+                  <Menu.Item icon={<CoinOutlined />}>{language === 'zh' ? '积分充值' : 'Recharge'}</Menu.Item>
+                  <Menu.Item icon={<HistoryOutlined />}>{language === 'zh' ? '积分流水' : 'Points Record'}</Menu.Item>
+                  <Menu.Item icon={<UserOutlined />}>{language === 'zh' ? '个人中心' : 'Profile'}</Menu.Item>
+                  <Menu.Item icon={<BookOutlined />}>{language === 'zh' ? '关于我们' : 'About Us'}</Menu.Item>
+                  <Menu.Item icon={<BookOutlined />}>{language === 'zh' ? '定价方案' : 'Pricing'}</Menu.Item>
+                  <Menu.Item 
+                    icon={<UserOutlined />} 
+                    onClick={() => setIsLogin(false)}
+                  >
+                    {language === 'zh' ? '退出登录' : 'Logout'}
+                  </Menu.Item>
+                </Menu>
+              }
+            >
+              <Button icon={<UserOutlined />} className="header-btn user-btn">
+                {language === 'zh' ? '已登录' : 'Logged In'}
+              </Button>
+            </Dropdown>
+          ) : (
+            <Button 
+              icon={<UserOutlined />} 
+              type="primary"
+              onClick={() => setIsLogin(true)}
+              className="header-btn"
+            >
+              {language === 'zh' ? '登录/注册' : 'Login/Register'}
+            </Button>
+          )}
+        </div>
+      </header>
+
+      {/* 邀请好友弹窗 */}
+      <Modal
+        title={language === 'zh' ? '邀请好友' : 'Invite Friends'}
+        open={isInviteModalOpen}
+        onCancel={handleCloseInviteModal}
+        footer={[
+          <Button key="close" onClick={handleCloseInviteModal}>
+            {language === 'zh' ? '关闭' : 'Close'}
+          </Button>
+        ]}
+      >
+        <div className="invite-modal-content">
+          <p>{language === 'zh' ? '邀请码：' : 'Invite Code：'} <span className="invite-code">AI-DESIGN-2024</span></p>
+          <p>{language === 'zh' ? '分享链接：' : 'Share Link：'} <a href="javascript:;">https://ai-design-agent.com/invite/AI-DESIGN-2024</a></p>
+          <Button type="primary" className="copy-btn">{language === 'zh' ? '复制邀请码' : 'Copy Code'}</Button>
+        </div>
+      </Modal>
+
+      {/* 主内容区 */}
+      <main className="main-content">
+        {/* 左侧历史任务栏 */}
+        <div className="history-sidebar">
+          <div className="sidebar-header">
+            <HistoryOutlined />
+            <span className="sidebar-title">{language === 'zh' ? '历史任务' : 'History Tasks'}</span>
+          </div>
+          <div className="history-list">
+            {historyTasks.map(task => (
+              <div 
+                key={task.id}
+                className={`history-item ${activeTask?.id === task.id ? 'active' : ''}`}
+                onClick={() => handleSwitchTask(task)}
+              >
+                <span className="task-name">{task.name}</span>
+                <span className="task-time">{task.createTime}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 中间工作区与结果区 */}
+        {!isModifyMode ? (
+          <div className="workspace-container">
+            {/* 工作区 */}
+            <div className="workspace" ref={workspaceRef}>
+              <div className="workspace-header">
+                <h3>{language === 'zh' ? '工作区' : 'Workspace'} ({workspaceImages.length})</h3>
+                <Upload
+                  name="file"
+                  beforeUpload={handleUpload}
+                  showUploadList={false}
+                  className="upload-btn"
+                >
+                  <Button icon={<UploadOutlined />}>{language === 'zh' ? '本地上传' : 'Upload Local'}</Button>
+                </Upload>
+              </div>
+              <div className="image-grid">
+                {workspaceImages.length > 0 ? (
+                  workspaceImages.map(image => (
+                    <div 
+                      key={image.id}
+                      className="image-card"
+                      draggable
+                      onDragStart={() => handleImageDrag(image, 'result')}
+                      onClick={() => handleEnterModify(image)}
+                    >
+                      <img src={image.url} alt={image.name} className="image-preview" />
+                      <div className="image-index">{image.index}</div>
+                      <button 
+                        className="delete-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteImage(image.id);
+                        }}
+                      >
+                        <DeleteOutlined />
+                      </button>
                     </div>
-                    <button id="rechargeBtn" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-800">充值积分</button>
-                    <button id="priceRuleBtn" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-800">收费标准</button>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- 主内容区 + 拖拽布局 -->
-    <main id="mainContainer" class="flex-1 flex overflow-hidden relative">
-        <!-- 左侧操作区 -->
-        <section id="leftPanel" class="h-full flex flex-col p-4 border-r border-gray-800" style="width:45%;min-width:300px;max-width:70%;">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-xs text-gray-400">操作区</span>
-            </div>
-            <div class="flex-1 border-2 border-dashed border-gray-700 rounded-lg p-2 relative panel-hover overflow-hidden">
-                <!-- 操作区图片容器 - 移除示例图片 -->
-                <div id="operateImagesContainer" class="operate-images"></div>
-                <button id="addImageBtn" class="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center hover:bg-gray-700">+</button>
-            </div>
-        </section>
-
-        <!-- 拖拽分割条 -->
-        <div id="dragGutter" class="gutter"></div>
-
-        <!-- 中间生成区 -->
-        <section id="rightPanel" class="flex-1 h-full p-4 overflow-y-auto scrollbar-hide">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-xs text-gray-400">生成结果区</span>
-            </div>
-            <!-- 生成结果区 - 移除示例图片 -->
-            <div id="resultImagesContainer" class="grid grid-cols-3 gap-4"></div>
-        </section>
-
-        <!-- 右侧预设区 - 移除室内设计/建筑设计按键 -->
-        <aside class="w-64 h-full bg-[#12141a] border-l border-gray-800 p-4 overflow-y-auto scrollbar-hide">
-            <div class="mb-4">
-                <span class="text-sm font-medium">右侧预设键</span>
-            </div>
-            <div class="space-y-2">
-                <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="超级融合效果，多图融合，自然过渡，高清细节">超级融合</button>
-                <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="平面布局设计，空间规划，合理分区，高清线稿">平面布局</button>
-                <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="空间分镜效果，多视角展示，沉浸式体验，光影层次">空间分镜</button>
-                <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="SU模型转效果图，真实材质，光影渲染，高清输出">SU转效果图</button>
-                <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="空间爆炸效果，分层展示，结构清晰，三维可视化">空间爆炸</button>
-                <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="材料排版设计，材质展示，色彩搭配，细节纹理">材料排版</button>
-                <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="一键彩平图，色彩鲜明，分区清晰，专业规范">一键彩平</button>
-                <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="景观彩平图，植物配置，地形规划，色彩协调">景观彩平</button>
-                <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="灯光氛围效果，光影渲染，氛围感拉满，真实质感">灯光氛围</button>
-                <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="通道转换效果，多通道分离，精准编辑，专业后期">通道转换</button>
-                <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="彩平转轴测图，三维转换，视角切换，专业制图">彩平转轴测图</button>
-                <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="软装分析图，家具布局，风格搭配，色彩协调">软装分析</button>
-                <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="地域分析图，文化元素，地域特色，空间融合">地域分析</button>
-                <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="概念推演效果，创意可视化，逐步呈现，逻辑清晰">概念推演</button>
-                <button class="preset-function-btn w-full py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm" data-prompt="多功能岛台，大理石台面，台面上有水池，电池炉">产品定制</button>
-            </div>
-        </aside>
-    </main>
-
-    <!-- 底部控制栏 + 输入栏 -->
-    <footer class="border-t border-gray-800 bg-[#12141a] flex flex-col px-4 py-2">
-        <!-- 新增底部控制栏（质量、画幅、分辨率、批量） -->
-        <div class="bottom-controls" id="bottomControls">
-            <!-- 质量控制 -->
-            <div class="control-group">
-                <label>质量</label>
-                <select id="qualitySelect">
-                    <option value="standard">标准</option>
-                    <option value="high">高清</option>
-                    <option value="ultra">超清</option>
-                </select>
-            </div>
-            <!-- 画幅控制 - 取消汽车，新增指定比例 -->
-            <div class="control-group">
-                <label>画幅</label>
-                <select id="aspectRatioSelect">
-                    <option value="1:1">1:1</option>
-                    <option value="4:3">4:3</option>
-                    <option value="3:4">3:4</option>
-                    <option value="16:9">16:9</option>
-                    <option value="9:16">9:16</option>
-                    <option value="5:3">5:3</option>
-                    <option value="3:5">3:5</option>
-                    <option value="21:9">21:9</option>
-                </select>
-            </div>
-            <!-- 分辨率控制 -->
-            <div class="control-group">
-                <label>分辨率</label>
-                <select id="resolutionSelect">
-                    <option value="1k">1K</option>
-                    <option value="2k">2K</option>
-                    <option value="4k">4K</option>
-                </select>
-            </div>
-            <!-- 批量控制 -->
-            <div class="control-group">
-                <label>批量</label>
-                <select id="batchSelect">
-                    <option value="1">1张</option>
-                    <option value="3">3张</option>
-                    <option value="6">6张</option>
-                    <option value="9">9张</option>
-                </select>
-            </div>
-        </div>
-        
-        <!-- 提示词输入栏 -->
-        <div class="h-14 flex items-center gap-4">
-            <div class="flex-1 relative">
-                <input id="promptInput" type="text" placeholder="输入提示词..." class="w-full bg-[#1e212b] rounded px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-600">
-                <!-- 预设提示词弹窗 -->
-                <div id="promptPresets" class="prompt-presets">
-                    <div class="preset-item" data-prompt="现代简约风格，高清，自然光，建筑效果图">现代简约建筑效果图</div>
-                    <div class="preset-item" data-prompt="新中式风格，园林景观，黄昏，细节丰富">新中式园林景观</div>
-                    <div class="preset-item" data-prompt="工业风，loft空间，金属质感，高对比度">工业风LOFT空间</div>
-                    <div class="preset-item" data-prompt="添加自定义预设" onclick="addCustomPreset()">+ 添加自定义预设</div>
-                </div>
-                <button id="presetBtn" class="preset-btn absolute right-2 top-1/2 transform -translate-y-1/2 bg-gray-700 rounded px-2 py-1 text-xs">预设</button>
-            </div>
-            <!-- 生成按钮 - 改为调整图片后生成新图片 -->
-            <button id="generateBtn" class="px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 text-sm">
-                生成 <span id="scoreConsume">(消耗: 50积分)</span>
-            </button>
-        </div>
-    </footer>
-
-    <!-- 图片预览修改模态框 -->
-    <div id="previewModal" class="preview-modal">
-        <div class="preview-content">
-            <div class="lasso-tool" id="lassoTool"></div>
-            <!-- 遮罩颜色选择 -->
-            <div class="mask-color-picker">
-                <div class="color-block active" style="background: red;" data-color="red"></div>
-                <div class="color-block" style="background: yellow;" data-color="yellow"></div>
-                <div class="color-block" style="background: green;" data-color="green"></div>
-                <div class="color-block" style="background: blue;" data-color="blue"></div>
-                <div class="color-block" style="background: white;" data-color="white"></div>
-            </div>
-            <img id="previewImage" class="preview-img" src="" alt="预览图片">
-            <!-- 预览控制按钮 -->
-            <div class="preview-controls">
-                <div class="preview-control-btn" id="compareBtn" title="原图/现图对比">↔</div>
-                <div class="preview-control-btn" id="downloadBtn" title="下载图片">↓</div>
-                <div class="preview-control-btn" id="deleteBtn" title="删除图片">×</div>
-                <div class="preview-control-btn" id="lassoBtn" title="套索工具">✎</div>
-                <div class="preview-control-btn" id="closePreviewBtn" title="关闭预览">✕</div>
-            </div>
-        </div>
-        <input id="previewEditInput" class="preview-edit-input" placeholder="输入修改提示词...">
-        <button id="applyEditBtn" class="w-40 mx-auto mt-10 py-2 bg-blue-600 rounded hover:bg-blue-500 text-sm">应用修改</button>
-    </div>
-
-    <!-- 文字生图界面（创作风暴）- 按截图重构 -->
-    <div id="text2imgInterface" class="text2img-interface">
-        <div class="text2img-header">
-            <h2>创作风暴</h2>
-            <div class="text2img-close" id="closeText2ImgBtn">关闭</div>
-        </div>
-        <div class="text2img-content">
-            <!-- 创作风暴主区域 -->
-            <div class="creation-storm-main">
-                <div class="creation-storm-tips">
-                    <p>1.将图片从其它外部软件或平台拖入到此位置时界面自动切换到主界面的"操作区"进行图片编辑</p>
-                    <p>2.在没有任何图片拖入或加入时在下面提示词框内输入提示词会自动按提示词生成图片，同时生成的图片自动切换到主界面的"操作区"进行图片再编辑。</p>
-                </div>
-            </div>
-            
-            <!-- 底部控制栏 -->
-            <div class="bottom-controls">
-                <div class="control-group">
-                    <label>质量</label>
-                    <select id="text2imgQualitySelect">
-                        <option value="standard">标准</option>
-                        <option value="high">高清</option>
-                        <option value="ultra">超清</option>
-                    </select>
-                </div>
-                <div class="control-group">
-                    <label>画幅</label>
-                    <select id="text2imgAspectRatioSelect">
-                        <option value="1:1">1:1</option>
-                        <option value="4:3">4:3</option>
-                        <option value="3:4">3:4</option>
-                        <option value="16:9">16:9</option>
-                        <option value="9:16">9:16</option>
-                        <option value="5:3">5:3</option>
-                        <option value="3:5">3:5</option>
-                        <option value="21:9">21:9</option>
-                    </select>
-                </div>
-                <div class="control-group">
-                    <label>分辨率</label>
-                    <select id="text2imgResolutionSelect">
-                        <option value="1k">1K</option>
-                        <option value="2k">2K</option>
-                        <option value="4k">4K</option>
-                    </select>
-                </div>
-                <div class="control-group">
-                    <label>批量</label>
-                    <select id="text2imgBatchSelect">
-                        <option value="1">1张</option>
-                        <option value="3">3张</option>
-                        <option value="6">6张</option>
-                        <option value="9">9张</option>
-                    </select>
-                </div>
-            </div>
-            
-            <!-- 提示词输入 -->
-            <div class="flex items-center gap-4">
-                <div class="flex-1 relative">
-                    <input id="text2imgPromptInput" type="text" placeholder="描述你的创意灵感..." class="w-full bg-[#1e212b] rounded px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-600">
-                    <button id="text2imgPresetBtn" class="preset-btn absolute right-2 top-1/2 transform -translate-y-1/2 bg-gray-700 rounded px-2 py-1 text-xs">预设</button>
-                </div>
-                <button id="text2imgGenerateBtn" class="px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 text-sm">
-                    生成 <span id="text2imgScoreConsume">(消耗: 50积分)</span>
-                </button>
-            </div>
-            
-            <!-- 文字生图结果区 -->
-            <div id="text2imgResult" class="text2img-result"></div>
-        </div>
-    </div>
-
-    <!-- 资源管理/历史记录界面 -->
-    <div id="historyInterface" class="history-interface">
-        <div class="history-header">
-            <h2>资源管理 - 历史记录</h2>
-            <div class="history-close" id="closeHistoryBtn">关闭</div>
-        </div>
-        <div id="historyPackages" class="history-packages">
-            <!-- 按24小时自动归纳的历史包示例 -->
-            <div class="history-package">
-                <div class="package-header">
-                    <div class="package-date">2024-05-20</div>
-                    <div class="package-delete" onclick="deletePackage(this)">删除整包</div>
-                </div>
-                <div class="package-images">
-                    <!-- 动态生成的历史图片 -->
-                </div>
-            </div>
-            <div class="history-package">
-                <div class="package-header">
-                    <div class="package-date">2024-05-19</div>
-                    <div class="package-delete" onclick="deletePackage(this)">删除整包</div>
-                </div>
-                <div class="package-images">
-                    <!-- 动态生成的历史图片 -->
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 邀请加入弹窗 -->
-    <div id="inviteModal" class="invite-modal">
-        <div class="invite-content">
-            <h3>邀请加入</h3>
-            <div>邀请链接: <a href="https://example.com/invite" target="_blank" class="text-blue-500">https://example.com/invite</a></div>
-            <div class="invite-code">
-                邀请码: <span id="inviteCode">AI888-999-777</span>
-                <div class="copy-btn" onclick="copyInviteCode()">复制</div>
-            </div>
-            <button class="invite-close" id="closeInviteBtn">关闭</button>
-        </div>
-    </div>
-
-    <!-- 积分相关弹窗 -->
-    <div id="scoreModal" class="score-modal">
-        <div class="score-content" id="scoreModalContent">
-            <!-- 内容会动态切换 -->
-        </div>
-        <button class="score-close" id="closeScoreBtn">关闭</button>
-    </div>
-
-    <!-- 登录弹窗 -->
-    <div id="loginModal" class="login-modal">
-        <div class="login-close" id="closeLoginBtn">×</div>
-        <div class="login-content">
-            <h3>用户登录</h3>
-            <div class="login-tabs">
-                <div class="login-tab active" data-tab="account">账号密码登录</div>
-                <div class="login-tab" data-tab="qrcode">二维码登录</div>
-            </div>
-            
-            <!-- 账号密码登录 -->
-            <div class="login-form" id="accountLoginForm">
-                <div class="form-group">
-                    <label>用户名</label>
-                    <input type="text" placeholder="请输入用户名">
-                </div>
-                <div class="form-group">
-                    <label>密码</label>
-                    <input type="password" placeholder="请输入密码">
-                </div>
-                <button class="form-btn">登录</button>
-                <div class="form-switch">
-                    还没有账号？<span id="showRegisterForm">立即注册</span>
-                </div>
-            </div>
-            
-            <!-- 注册表单 -->
-            <div class="register-form" id="registerForm" style="display: none;">
-                <div class="form-group">
-                    <label>用户名</label>
-                    <input type="text" placeholder="请设置用户名">
-                </div>
-                <div class="form-group">
-                    <label>手机号</label>
-                    <input type="tel" placeholder="请输入手机号">
-                </div>
-                <div class="form-group">
-                    <label>验证码</label>
-                    <div style="display: flex; gap: 10px;">
-                        <input type="text" placeholder="请输入验证码" style="flex: 1;">
-                        <button class="form-btn" style="padding: 8px; flex-shrink: 0;">获取验证码</button>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>密码</label>
-                    <input type="password" placeholder="请设置密码">
-                </div>
-                <div class="form-group">
-                    <label>确认密码</label>
-                    <input type="password" placeholder="请确认密码">
-                </div>
-                <div class="form-group">
-                    <label>邀请码 (选填)</label>
-                    <input type="text" placeholder="请输入邀请码（可选）">
-                </div>
-                <button class="form-btn">注册</button>
-                <div class="form-switch">
-                    已有账号？<span id="showLoginForm">立即登录</span>
-                </div>
-            </div>
-            
-            <!-- 二维码登录 -->
-            <div class="qrcode-login" id="qrcodeLoginForm" style="display: none;">
-                <div class="qrcode-container">
-                    <div class="qrcode-img">微信扫码登录</div>
-                    <p class="text-sm text-gray-400">请使用微信扫描二维码登录</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 拖拽功能 JS -->
-    <script>
-        // 原有拖拽分割条功能
-        const leftPanel = document.getElementById('leftPanel');
-        const rightPanel = document.getElementById('rightPanel');
-        const gutter = document.getElementById('dragGutter');
-        const container = document.getElementById('mainContainer');
-
-        let isDragging = false;
-
-        gutter.addEventListener('mousedown', (e) => {
-            isDragging = true;
-            document.body.style.cursor = 'col-resize';
-            e.preventDefault();
-        });
-
-        window.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-            const containerRect = container.getBoundingClientRect();
-            const percent = (e.clientX - containerRect.left) / containerRect.width * 100;
-            
-            // 限制最小/最大宽度
-            if(percent > 25 && percent < 70){
-                leftPanel.style.width = percent + '%';
-            }
-        });
-
-        window.addEventListener('mouseup', () => {
-            isDragging = false;
-            document.body.style.cursor = '';
-        });
-
-        // 1. 生成按钮积分显示 - 生成按钮改为调整图片后生成新图片
-        let currentQuality = 'standard';
-        const scoreConsumeEl = document.getElementById('scoreConsume');
-        const text2imgScoreConsumeEl = document.getElementById('text2imgScoreConsume');
-        
-        // 质量选择事件监听
-        document.getElementById('qualitySelect').addEventListener('change', function() {
-            updateScoreConsume(this.value);
-        });
-        
-        document.getElementById('text2imgQualitySelect').addEventListener('change', function() {
-            updateScoreConsume(this.value);
-        });
-        
-        // 示例：切换质量时更新积分
-        function updateScoreConsume(quality) {
-            let score = 50;
-            if (quality === 'high') score = 100;
-            if (quality === 'ultra') score = 200;
-            
-            scoreConsumeEl.textContent = `(消耗: ${score}积分)`;
-            text2imgScoreConsumeEl.textContent = `(消耗: ${score}积分)`;
-            currentQuality = quality;
-        }
-
-        // 2. 提示词预设功能 - 支持点亮/关闭切换
-        const presetBtn = document.getElementById('presetBtn');
-        const promptPresets = document.getElementById('promptPresets');
-        const promptInput = document.getElementById('promptInput');
-        const text2imgPresetBtn = document.getElementById('text2imgPresetBtn');
-        const text2imgPromptInput = document.getElementById('text2imgPromptInput');
-
-        // 切换预设弹窗显示（支持点亮/关闭）
-        presetBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            // 切换激活状态
-            presetBtn.classList.toggle('active');
-            if (presetBtn.classList.contains('active')) {
-                promptPresets.style.display = 'flex';
-            } else {
-                promptPresets.style.display = 'none';
-            }
-        });
-
-        text2imgPresetBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            // 切换激活状态
-            text2imgPresetBtn.classList.toggle('active');
-            if (text2imgPresetBtn.classList.contains('active')) {
-                promptPresets.style.display = 'flex';
-            } else {
-                promptPresets.style.display = 'none';
-            }
-        });
-
-        // 点击预设项填充提示词
-        document.querySelectorAll('.preset-item').forEach(item => {
-            if (!item.hasAttribute('onclick')) {
-                item.addEventListener('click', () => {
-                    const prompt = item.getAttribute('data-prompt');
-                    if (document.getElementById('text2imgInterface').style.display === 'flex') {
-                        text2imgPromptInput.value = prompt;
-                    } else {
-                        promptInput.value = prompt;
-                    }
-                    // 保持激活状态，不自动关闭
-                });
-            }
-        });
-
-        // 点击空白处关闭预设弹窗并取消激活
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.prompt-presets') && !e.target.closest('.preset-btn')) {
-                promptPresets.style.display = 'none';
-                presetBtn.classList.remove('active');
-                text2imgPresetBtn.classList.remove('active');
-            }
-        });
-
-        // 添加自定义预设
-        function addCustomPreset() {
-            const customPrompt = prompt('请输入自定义预设提示词:');
-            if (customPrompt) {
-                const newPreset = document.createElement('div');
-                newPreset.className = 'preset-item';
-                newPreset.setAttribute('data-prompt', customPrompt);
-                newPreset.textContent = customPrompt.length > 20 ? customPrompt.substring(0, 20) + '...' : customPrompt;
-                newPreset.addEventListener('click', () => {
-                    if (document.getElementById('text2imgInterface').style.display === 'flex') {
-                        text2imgPromptInput.value = customPrompt;
-                    } else {
-                        promptInput.value = customPrompt;
-                    }
-                });
-                // 插入到添加按钮前
-                promptPresets.insertBefore(newPreset, document.querySelector('.preset-item[onclick]'));
-            }
-        }
-
-        // 3. 图片预览修改功能
-        const previewModal = document.getElementById('previewModal');
-        const previewImage = document.getElementById('previewImage');
-        const closePreviewBtn = document.getElementById('closePreviewBtn');
-        const compareBtn = document.getElementById('compareBtn');
-        const downloadBtn = document.getElementById('downloadBtn');
-        const deleteBtn = document.getElementById('deleteBtn');
-        const lassoBtn = document.getElementById('lassoBtn');
-        const lassoTool = document.getElementById('lassoTool');
-        const previewEditInput = document.getElementById('previewEditInput');
-        const applyEditBtn = document.getElementById('applyEditBtn');
-        const colorBlocks = document.querySelectorAll('.color-block');
-        
-        // 遮罩颜色选择
-        colorBlocks.forEach(block => {
-            block.addEventListener('click', () => {
-                colorBlocks.forEach(b => b.classList.remove('active'));
-                block.classList.add('active');
-                console.log('选择遮罩颜色:', block.getAttribute('data-color'));
-            });
-        });
-
-        // 套索工具
-        let isLassoActive = false;
-        let lassoStartX = 0;
-        let lassoStartY = 0;
-        
-        lassoBtn.addEventListener('click', () => {
-            isLassoActive = !isLassoActive;
-            lassoBtn.style.background = isLassoActive ? '#4b5563' : '#1e212b';
-            lassoTool.style.display = isLassoActive ? 'block' : 'none';
-        });
-
-        // 套索绘制
-        previewModal.addEventListener('mousedown', (e) => {
-            if (!isLassoActive) return;
-            
-            const previewContent = document.querySelector('.preview-content');
-            const rect = previewContent.getBoundingClientRect();
-            
-            lassoStartX = e.clientX - rect.left;
-            lassoStartY = e.clientY - rect.top;
-            
-            lassoTool.style.left = lassoStartX + 'px';
-            lassoTool.style.top = lassoStartY + 'px';
-            lassoTool.style.width = '0px';
-            lassoTool.style.height = '0px';
-
-            const onMouseMove = (e) => {
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                
-                const width = x - lassoStartX;
-                const height = y - lassoStartY;
-                
-                lassoTool.style.width = Math.abs(width) + 'px';
-                lassoTool.style.height = Math.abs(height) + 'px';
-                lassoTool.style.left = width < 0 ? x + 'px' : lassoStartX + 'px';
-                lassoTool.style.top = height < 0 ? y + 'px' : lassoStartY + 'px';
-            };
-
-            const onMouseUp = () => {
-                document.removeEventListener('mousemove', onMouseMove);
-                document.removeEventListener('mouseup', onMouseUp);
-            };
-
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('mouseup', onMouseUp);
-        });
-
-        // 滚轮调整画笔大小（示例）
-        previewModal.addEventListener('wheel', (e) => {
-            const delta = e.deltaY > 0 ? -1 : 1;
-            console.log('画笔大小调整:', delta);
-            e.preventDefault();
-        });
-
-        // 打开预览
-        document.addEventListener('click', function(e) {
-            if (e.target.closest('.result-img-item img')) {
-                const img = e.target.closest('.result-img-item img');
-                previewImage.src = img.src;
-                previewModal.style.display = 'flex';
-                previewModal.setAttribute('data-img-src', img.src);
-                previewModal.setAttribute('data-img-parent', img.parentElement);
-            }
-        });
-
-        // 关闭预览
-        closePreviewBtn.addEventListener('click', () => {
-            previewModal.style.display = 'none';
-            isLassoActive = false;
-            lassoBtn.style.background = '#1e212b';
-            lassoTool.style.display = 'none';
-        });
-
-        // 原图/现图对比
-        let isOriginal = true;
-        compareBtn.addEventListener('click', () => {
-            isOriginal = !isOriginal;
-            compareBtn.style.background = isOriginal ? '#4b5563' : '#1e212b';
-            console.log('切换对比:', isOriginal ? '原图' : '现图');
-        });
-
-        // 下载图片
-        downloadBtn.addEventListener('click', () => {
-            const a = document.createElement('a');
-            a.href = previewImage.src;
-            a.download = 'ai-design-' + new Date().getTime() + '.jpg';
-            a.click();
-        });
-
-        // 删除图片
-        deleteBtn.addEventListener('click', () => {
-            const parentEl = document.querySelector(previewModal.getAttribute('data-img-parent'));
-            if (parentEl) parentEl.remove();
-            previewModal.style.display = 'none';
-        });
-
-        // 应用修改
-        applyEditBtn.addEventListener('click', () => {
-            const editPrompt = previewEditInput.value;
-            if (editPrompt) {
-                console.log('应用修改提示词:', editPrompt);
-                alert('修改已应用！');
-            } else {
-                alert('请输入修改提示词！');
-            }
-        });
-
-        // 5. 生成结果区图片拖拽排序和删除/下载
-        const resultContainer = document.getElementById('resultImagesContainer');
-        
-        // 拖拽排序
-        let draggedItem = null;
-        resultContainer.addEventListener('dragstart', (e) => {
-            if (e.target.closest('.result-img-item')) {
-                draggedItem = e.target.closest('.result-img-item');
-                setTimeout(() => {
-                    draggedItem.style.opacity = '0.5';
-                }, 0);
-            }
-        });
-
-        resultContainer.addEventListener('dragend', () => {
-            if (draggedItem) {
-                draggedItem.style.opacity = '1';
-                draggedItem = null;
-            }
-        });
-
-        resultContainer.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            const afterElement = getDragAfterElement(resultContainer, e.clientX);
-            const draggable = draggedItem;
-            if (afterElement == null) {
-                resultContainer.appendChild(draggable);
-            } else {
-                resultContainer.insertBefore(draggable, afterElement);
-            }
-        });
-
-        function getDragAfterElement(container, x) {
-            const draggableElements = [...container.querySelectorAll('.result-img-item:not(.dragging)')];
-            
-            return draggableElements.reduce((closest, child) => {
-                const box = child.getBoundingClientRect();
-                const offset = x - box.left - box.width / 2;
-                if (offset < 0 && offset > closest.offset) {
-                    return { offset: offset, element: child };
-                } else {
-                    return closest;
-                }
-            }, { offset: Number.NEGATIVE_INFINITY }).element;
-        }
-
-        // 删除生成结果图片
-        document.addEventListener('click', function(e) {
-            if (e.target.closest('.delete-result-img')) {
-                e.stopPropagation();
-                e.target.closest('.result-img-item').remove();
-            }
-        });
-
-        // 下载生成结果图片
-        document.addEventListener('click', function(e) {
-            if (e.target.closest('.download-result-img')) {
-                e.stopPropagation();
-                const img = e.target.closest('.result-img-item').querySelector('img');
-                const a = document.createElement('a');
-                a.href = img.src;
-                a.download = 'ai-result-' + new Date().getTime() + '.jpg';
-                a.click();
-            }
-        });
-
-        // 6. 操作区多张图片管理（支持12张外部导入）
-        const operateContainer = document.getElementById('operateImagesContainer');
-        const addImageBtn = document.getElementById('addImageBtn');
-        
-        // 添加图片
-        addImageBtn.addEventListener('click', () => {
-            const imgCount = operateContainer.children.length;
-            if (imgCount >= 12) {
-                alert('最多只能添加12张图片！');
-                return;
-            }
-            
-            // 创建文件选择器
-            const fileInput = document.createElement('input');
-            fileInput.type = 'file';
-            fileInput.accept = 'image/*';
-            fileInput.multiple = true;
-            
-            fileInput.addEventListener('change', (e) => {
-                const files = e.target.files;
-                if (files.length === 0) return;
-                
-                // 计算可添加的数量
-                const remaining = 12 - imgCount;
-                const addCount = Math.min(files.length, remaining);
-                
-                for (let i = 0; i < addCount; i++) {
-                    const file = files[i];
-                    const reader = new FileReader();
-                    
-                    reader.onload = function(event) {
-                        const newImgItem = document.createElement('div');
-                        newImgItem.className = 'operate-img-item';
-                        newImgItem.draggable = true;
-                        
-                        const imgNumber = document.createElement('div');
-                        imgNumber.className = 'operate-img-number';
-                        imgNumber.textContent = operateContainer.children.length + 1;
-                        
-                        const img = document.createElement('img');
-                        img.className = 'operate-img';
-                        img.src = event.target.result;
-                        img.alt = `操作图片${operateContainer.children.length + 1}`;
-                        
-                        newImgItem.appendChild(imgNumber);
-                        newImgItem.appendChild(img);
-                        operateContainer.appendChild(newImgItem);
-                        
-                        // 更新数字编号
-                        updateOperateImageNumbers();
-                    };
-                    
-                    reader.readAsDataURL(file);
-                }
-            });
-            
-            fileInput.click();
-        });
-
-        // 支持外部拖拽图片到操作区
-        operateContainer.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-        });
-        
-        operateContainer.addEventListener('drop', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const imgCount = operateContainer.children.length;
-            if (imgCount >= 12) {
-                alert('最多只能添加12张图片！');
-                return;
-            }
-            
-            const files = e.dataTransfer.files;
-            if (files.length === 0) return;
-            
-            const remaining = 12 - imgCount;
-            const addCount = Math.min(files.length, remaining);
-            
-            for (let i = 0; i < addCount; i++) {
-                const file = files[i];
-                if (!file.type.startsWith('image/')) continue;
-                
-                const reader = new FileReader();
-                
-                reader.onload = function(event) {
-                    const newImgItem = document.createElement('div');
-                    newImgItem.className = 'operate-img-item';
-                    newImgItem.draggable = true;
-                    
-                    const imgNumber = document.createElement('div');
-                    imgNumber.className = 'operate-img-number';
-                    imgNumber.textContent = operateContainer.children.length + 1;
-                    
-                    const img = document.createElement('img');
-                    img.className = 'operate-img';
-                    img.src = event.target.result;
-                    img.alt = `操作图片${operateContainer.children.length + 1}`;
-                    
-                    newImgItem.appendChild(imgNumber);
-                    newImgItem.appendChild(img);
-                    operateContainer.appendChild(newImgItem);
-                    
-                    updateOperateImageNumbers();
-                };
-                
-                reader.readAsDataURL(file);
-            }
-        });
-
-        // 更新操作区图片编号
-        function updateOperateImageNumbers() {
-            const items = operateContainer.querySelectorAll('.operate-img-item');
-            items.forEach((item, index) => {
-                item.querySelector('.operate-img-number').textContent = index + 1;
-            });
-        }
-
-        // 操作区图片拖拽排序（通过数字编号拖动）
-        operateContainer.addEventListener('dragstart', (e) => {
-            if (e.target.closest('.operate-img-item') || e.target.closest('.operate-img-number')) {
-                draggedItem = e.target.closest('.operate-img-item');
-                setTimeout(() => {
-                    draggedItem.style.opacity = '0.5';
-                }, 0);
-            }
-        });
-
-        operateContainer.addEventListener('dragend', () => {
-            if (draggedItem) {
-                draggedItem.style.opacity = '1';
-                updateOperateImageNumbers();
-                draggedItem = null;
-            }
-        });
-
-        operateContainer.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            const afterElement = getDragAfterElement(operateContainer, e.clientX);
-            const draggable = draggedItem;
-            if (afterElement == null) {
-                operateContainer.appendChild(draggable);
-            } else {
-                operateContainer.insertBefore(draggable, afterElement);
-            }
-        });
-
-        // DEL键删除操作区图片
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Delete' && document.activeElement.tagName !== 'INPUT') {
-                const activeItem = document.querySelector('.operate-img-item:hover');
-                if (activeItem) {
-                    activeItem.remove();
-                    updateOperateImageNumbers();
-                }
-            }
-        });
-
-        // 7. 生成结果区图片拖拽到操作区进行二次编辑
-        resultContainer.addEventListener('dragend', (e) => {
-            if (draggedItem && e.target.closest('#leftPanel')) {
-                const imgCount = operateContainer.children.length;
-                if (imgCount >= 12) {
-                    alert('最多只能添加12张图片！');
-                    return;
-                }
-                
-                // 复制图片到操作区
-                const imgSrc = draggedItem.querySelector('img').src;
-                const newImgItem = document.createElement('div');
-                newImgItem.className = 'operate-img-item';
-                newImgItem.draggable = true;
-                
-                const imgNumber = document.createElement('div');
-                imgNumber.className = 'operate-img-number';
-                imgNumber.textContent = imgCount + 1;
-                
-                const img = document.createElement('img');
-                img.className = 'operate-img';
-                img.src = imgSrc;
-                img.alt = `操作图片${imgCount + 1}`;
-                
-                newImgItem.appendChild(imgNumber);
-                newImgItem.appendChild(img);
-                operateContainer.appendChild(newImgItem);
-                
-                updateOperateImageNumbers();
-            }
-        });
-
-        // 8. 返回创作风暴（文字生图界面）- 点击立即切换
-        const backToText2Img = document.getElementById('backToText2Img');
-        const text2imgInterface = document.getElementById('text2imgInterface');
-        const closeText2ImgBtn = document.getElementById('closeText2ImgBtn');
-        
-        backToText2Img.addEventListener('click', () => {
-            text2imgInterface.style.display = 'flex';
-        });
-
-        closeText2ImgBtn.addEventListener('click', () => {
-            text2imgInterface.style.display = 'none';
-        });
-
-        // 9. 文字生图结果自动进入主界面生成结果区
-        const text2imgGenerateBtn = document.getElementById('text2imgGenerateBtn');
-        const text2imgResult = document.getElementById('text2imgResult');
-        
-        text2imgGenerateBtn.addEventListener('click', () => {
-            const prompt = text2imgPromptInput.value;
-            if (!prompt) {
-                alert('请输入提示词！');
-                return;
-            }
-            
-            // 获取批量数量
-            const batchCount = parseInt(document.getElementById('text2imgBatchSelect').value);
-            
-            // 生成指定数量的图片
-            for (let i = 0; i < batchCount; i++) {
-                const newResultImg = document.createElement('div');
-                newResultImg.className = 'result-img-item aspect-[4/3] bg-gray-800 rounded overflow-hidden panel-hover';
-                newResultImg.draggable = true;
-                
-                const controls = document.createElement('div');
-                controls.className = 'result-img-controls';
-                
-                const deleteBtn = document.createElement('div');
-                deleteBtn.className = 'result-img-btn delete-result-img';
-                deleteBtn.textContent = '×';
-                deleteBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    newResultImg.remove();
-                });
-                
-                const downloadBtn = document.createElement('div');
-                downloadBtn.className = 'result-img-btn download-result-img';
-                downloadBtn.textContent = '↓';
-                downloadBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const img = newResultImg.querySelector('img');
-                    const a = document.createElement('a');
-                    a.href = img.src;
-                    a.download = 'ai-text2img-' + new Date().getTime() + '.jpg';
-                    a.click();
-                });
-                
-                controls.appendChild(deleteBtn);
-                controls.appendChild(downloadBtn);
-                
-                const img = document.createElement('img');
-                img.src = `https://picsum.photos/seed/${Math.random()}/400/300`;
-                img.className = 'w-full h-full object-cover';
-                img.alt = '文字生图结果';
-                
-                img.addEventListener('click', () => {
-                    previewImage.src = img.src;
-                    previewModal.style.display = 'flex';
-                    previewModal.setAttribute('data-img-src', img.src);
-                    previewModal.setAttribute('data-img-parent', newResultImg);
-                });
-                
-                newResultImg.appendChild(controls);
-                newResultImg.appendChild(img);
-                
-                // 添加到文字生图结果区
-                text2imgResult.appendChild(newResultImg.cloneNode(true));
-                
-                // 添加到主界面生成结果区
-                resultContainer.appendChild(newResultImg);
-            }
-            
-            alert(`已生成${batchCount}张图片，结果已同步到主界面！`);
-        });
-
-        // 10. 资源管理/历史记录 - 按24小时归纳
-        const resourceBtn = document.getElementById('resourceBtn');
-        const historyInterface = document.getElementById('historyInterface');
-        const closeHistoryBtn = document.getElementById('closeHistoryBtn');
-        
-        resourceBtn.addEventListener('click', () => {
-            historyInterface.style.display = 'flex';
-        });
-
-        closeHistoryBtn.addEventListener('click', () => {
-            historyInterface.style.display = 'none';
-        });
-
-        // 删除历史图片
-        function deleteHistoryImg(el) {
-            el.closest('.package-img-item').remove();
-        }
-
-        // 删除历史包
-        function deletePackage(el) {
-            if (confirm('确定删除这个日期的所有图片吗？')) {
-                el.closest('.history-package').remove();
-            }
-        }
-
-        // 11. 积分相关弹窗 - 不显示积分数字
-        const scoreBtn = document.getElementById('scoreBtn');
-        const rechargeBtn = document.getElementById('rechargeBtn');
-        const priceRuleBtn = document.getElementById('priceRuleBtn');
-        const scoreModal = document.getElementById('scoreModal');
-        const scoreModalContent = document.getElementById('scoreModalContent');
-        const closeScoreBtn = document.getElementById('closeScoreBtn');
-        
-        // 充值积分
-        rechargeBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            scoreModalContent.innerHTML = `
-                <h3>充值积分</h3>
-                <p>请点击以下链接进行积分充值：</p>
-                <a href="https://example.com/recharge" target="_blank" class="recharge-link">https://example.com/recharge</a>
-                <div class="recharge-options">
-                    <div class="my-2">充值套餐：</div>
-                    <div class="flex gap-2 flex-wrap">
-                        <div class="bg-gray-800 p-2 rounded">100积分 - ¥10</div>
-                        <div class="bg-gray-800 p-2 rounded">500积分 - ¥45</div>
-                        <div class="bg-gray-800 p-2 rounded">1000积分 - ¥80</div>
-                    </div>
-                </div>
-            `;
-            scoreModal.style.display = 'block';
-        });
-
-        // 收费标准
-        priceRuleBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            scoreModalContent.innerHTML = `
-                <h3>收费标准和细则</h3>
-                <div class="text-sm space-y-2">
-                    <p>1. 标准质量生成：50积分/张</p>
-                    <p>2. 高质量生成：100积分/张</p>
-                    <p>3. 超高质量生成：200积分/张</p>
-                    <p>4. 图片修改：30积分/次</p>
-                    <p>5. 积分有效期：充值后12个月</p>
-                    <p>6. 取消生成不扣除积分</p>
-                    <p>7. 生成失败可申请积分退还</p>
-                </div>
-            `;
-            scoreModal.style.display = 'block';
-        });
-
-        closeScoreBtn.addEventListener('click', () => {
-            scoreModal.style.display = 'none';
-        });
-
-        // 12. 邀请加入弹窗
-        const inviteBtn = document.getElementById('inviteBtn');
-        const inviteModal = document.getElementById('inviteModal');
-        const closeInviteBtn = document.getElementById('closeInviteBtn');
-        const inviteCode = document.getElementById('inviteCode');
-        
-        // 生成随机邀请码
-        function generateInviteCode() {
-            const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-            let code = 'AI';
-            for (let i = 0; i < 3; i++) {
-                code += chars[Math.floor(Math.random() * chars.length)];
-            }
-            code += '-';
-            for (let i = 0; i < 3; i++) {
-                code += chars[Math.floor(Math.random() * chars.length)];
-            }
-            code += '-';
-            for (let i = 0; i < 3; i++) {
-                code += chars[Math.floor(Math.random() * chars.length)];
-            }
-            return code;
-        }
-
-        inviteBtn.addEventListener('click', () => {
-            inviteCode.textContent = generateInviteCode();
-            inviteModal.style.display = 'block';
-        });
-
-        closeInviteBtn.addEventListener('click', () => {
-            inviteModal.style.display = 'none';
-        });
-
-        // 复制邀请码
-        function copyInviteCode() {
-            const code = inviteCode.textContent;
-            navigator.clipboard.writeText(code).then(() => {
-                alert('邀请码已复制！');
-            });
-        }
-
-        // 13. 登录功能
-        const loginBtn = document.getElementById('loginBtn');
-        const loginModal = document.getElementById('loginModal');
-        const closeLoginBtn = document.getElementById('closeLoginBtn');
-        const loginTabs = document.querySelectorAll('.login-tab');
-        const accountLoginForm = document.getElementById('accountLoginForm');
-        const registerForm = document.getElementById('registerForm');
-        const qrcodeLoginForm = document.getElementById('qrcodeLoginForm');
-        const showRegisterForm = document.getElementById('showRegisterForm');
-        const showLoginForm = document.getElementById('showLoginForm');
-        
-        // 打开登录弹窗
-        loginBtn.addEventListener('click', () => {
-            loginModal.style.display = 'block';
-        });
-        
-        // 关闭登录弹窗
-        closeLoginBtn.addEventListener('click', () => {
-            loginModal.style.display = 'none';
-        });
-        
-        // 切换登录标签
-        loginTabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                loginTabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                
-                const tabType = tab.getAttribute('data-tab');
-                if (tabType === 'account') {
-                    accountLoginForm.style.display = 'flex';
-                    registerForm.style.display = 'none';
-                    qrcodeLoginForm.style.display = 'none';
-                } else if (tabType === 'qrcode') {
-                    accountLoginForm.style.display = 'none';
-                    registerForm.style.display = 'none';
-                    qrcodeLoginForm.style.display = 'flex';
-                }
-            });
-        });
-        
-        // 切换注册表单
-        showRegisterForm.addEventListener('click', () => {
-            loginTabs.forEach(t => t.classList.remove('active'));
-            accountLoginForm.style.display = 'none';
-            registerForm.style.display = 'flex';
-            qrcodeLoginForm.style.display = 'none';
-        });
-        
-        // 切换登录表单
-        showLoginForm.addEventListener('click', () => {
-            loginTabs[0].classList.add('active');
-            loginTabs[1].classList.remove('active');
-            accountLoginForm.style.display = 'flex';
-            registerForm.style.display = 'none';
-            qrcodeLoginForm.style.display = 'none';
-        });
-        
-        // 创作风暴区域拖拽图片
-        const creationStormMain = document.querySelector('.creation-storm-main');
-        creationStormMain.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-        });
-        
-        creationStormMain.addEventListener('drop', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            // 切换到主界面操作区
-            text2imgInterface.style.display = 'none';
-            
-            // 处理拖拽的图片
-            const imgCount = operateContainer.children.length;
-            if (imgCount >= 12) {
-                alert('最多只能添加12张图片！');
-                return;
-            }
-            
-            const files = e.dataTransfer.files;
-            if (files.length === 0) return;
-            
-            const remaining = 12 - imgCount;
-            const addCount = Math.min(files.length, remaining);
-            
-            for (let i = 0; i < addCount; i++) {
-                const file = files[i];
-                if (!file.type.startsWith('image/')) continue;
-                
-                const reader = new FileReader();
-                
-                reader.onload = function(event) {
-                    const newImgItem = document.createElement('div');
-                    newImgItem.className = 'operate-img-item';
-                    newImgItem.draggable = true;
-                    
-                    const imgNumber = document.createElement('div');
-                    imgNumber.className = 'operate-img-number';
-                    imgNumber.textContent = operateContainer.children.length + 1;
-                    
-                    const img = document.createElement('img');
-                    img.className = 'operate-img';
-                    img.src = event.target.result;
-                    img.alt = `操作图片${operateContainer.children.length + 1}`;
-                    
-                    newImgItem.appendChild(imgNumber);
-                    newImgItem.appendChild(img);
-                    operateContainer.appendChild(newImgItem);
-                    
-                    updateOperateImageNumbers();
-                };
-                
-                reader.readAsDataURL(file);
-            }
-            
-            alert(`已成功导入${addCount}张图片到操作区！`);
-        });
-    </script>
-</body>
-</html>
+                  ))
+                ) : (
