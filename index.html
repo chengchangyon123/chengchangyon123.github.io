@@ -1,252 +1,709 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Designer AI</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css">
+  <title>Designer AI - 创作思路</title>
+  <style>
+:root {
+  --bg: #0a0f1f;
+  --panel: #0f162f;
+  --panel-2: #111b38;
+  --line: #202f55;
+  --text: #dce8ff;
+  --muted: #7f94c9;
+  --primary: #2f6fff;
+  --danger: #d64343;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(1200px 800px at 60% 40%, #121a35 0%, var(--bg) 55%);
+  color: var(--text);
+  font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+}
+
+.app-shell {
+  min-height: 100vh;
+  padding: 12px;
+  display: grid;
+  grid-template-rows: 50px 1fr 56px;
+  gap: 10px;
+}
+
+.top-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid var(--line);
+  background: #0b1328;
+  padding: 0 12px;
+}
+
+.top-nav .left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.top-nav h1 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.icon-btn,
+.text-btn,
+button {
+  background: #1a2548;
+  color: var(--text);
+  border: 1px solid #2a3a6a;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.score-chip {
+  margin-left: 8px;
+  background: #17213f;
+  padding: 6px 8px;
+  border: 1px solid #2b3b68;
+}
+
+.main-view {
+  display: grid;
+  grid-template-columns: 1fr 1fr 230px;
+  gap: 10px;
+}
+
+.panel,
+.preset-panel {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  padding: 8px;
+  min-height: 0;
+}
+
+.panel h2,
+.preset-panel h3 {
+  margin: 4px 0 8px;
+  font-size: 14px;
+  color: #c6d7ff;
+}
+
+.canvas-wrap {
+  position: relative;
+  border: 1px dashed #2d4378;
+  background: #0a1227;
+  min-height: 480px;
+  padding: 8px;
+}
+
+.placeholder {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.plus-btn {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+}
+
+.toolbar-row {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.toolbar-row select {
+  background: #111b38;
+  color: var(--text);
+  border: 1px solid #2b3b68;
+  padding: 7px 6px;
+}
+
+.preset-list {
+  display: grid;
+  gap: 8px;
+  max-height: calc(100vh - 190px);
+  overflow-y: auto;
+}
+
+.preset-item {
+  width: 100%;
+  text-align: left;
+  background: var(--panel-2);
+  border: 1px solid #2a3d6f;
+  padding: 10px;
+}
+
+.thumb-grid {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.thumb-card {
+  border: 1px solid #314777;
+  padding: 6px;
+  background: #0f1a34;
+}
+
+.thumb-card img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  display: block;
+  cursor: pointer;
+}
+
+.thumb-actions {
+  margin-top: 6px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.bottom-bar {
+  border: 1px solid var(--line);
+  background: #0b1328;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+}
+
+.bottom-bar input {
+  width: 100%;
+  height: 36px;
+  border: 1px solid #2a3d6f;
+  background: #101a36;
+  color: var(--text);
+  padding: 0 10px;
+}
+
+.primary {
+  background: var(--primary);
+  border-color: #4d81ff;
+}
+
+.danger {
+  background: #3d1a24;
+  border-color: #73384b;
+  color: #ffd6d6;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+}
+
+.modal-mask {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.66);
+}
+
+.modal-body {
+  position: absolute;
+  inset: 20px;
+  display: grid;
+  grid-template-columns: 240px 1fr 220px;
+  gap: 8px;
+  padding: 10px;
+  background: #070d1b;
+  border: 1px solid #2a3a6a;
+}
+
+.close-btn {
+  position: absolute;
+  right: 10px;
+  top: 8px;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+}
+
+.edit-left,
+.edit-right {
+  border: 1px solid #253764;
+  background: #0d1731;
+  padding: 8px;
+}
+
+.edit-main {
+  border: 1px solid #253764;
+  background: #0d1731;
+  padding: 8px;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 8px;
+}
+
+.edit-nav {
+  display: flex;
+  gap: 6px;
+}
+
+.preview-wrap {
+  overflow: auto;
+  background: #090f22;
+  border: 1px dashed #2d4378;
+  display: grid;
+  place-items: center;
+}
+
+.preview-wrap img {
+  max-width: 100%;
+  max-height: 62vh;
+  object-fit: contain;
+}
+
+.edit-bottom {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.edit-bottom input {
+  border: 1px solid #2a3d6f;
+  background: #101a36;
+  color: var(--text);
+  height: 34px;
+  padding: 0 10px;
+}
+
+.ctl-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.ctl-group input {
+  width: 100%;
+}
+  </style>
 </head>
 <body>
   <div class="app-shell">
-    <header class="topbar">
-      <div class="brand">
-        <button class="icon-btn ghost" id="toggleViewBtn" title="切换到下一个创作界面">
-          <span>AI</span>
-        </button>
-        <div>
-          <p class="eyebrow">智能创作</p>
-          <h1>Designer AI</h1>
-        </div>
+    <header class="top-nav">
+      <div class="left">
+        <button class="icon-btn" id="switchPageBtn" title="切换到下一个创作界面">页面切换</button>
+        <h1 id="pageTitle">创作思路</h1>
       </div>
-      <nav class="topnav">
-        <a href="#">邀请加入</a>
-        <a href="#">资源管理</a>
-        <a href="#" id="loginBtn">登录</a>
-        <button class="score-btn">积分 <span id="creditCount">60</span></button>
-      </nav>
+      <div class="right">
+        <button class="text-btn" id="inviteBtn">邀请加入</button>
+        <button class="text-btn" id="assetsBtn">资源管理</button>
+        <button class="text-btn" id="loginBtn">登录</button>
+        <span class="score-chip">积分 <b id="scoreValue">0</b></span>
+      </div>
     </header>
 
-    <main class="workspace">
-      <section class="canvas-section">
-        <div class="panel-head">
-          <div>
-            <p class="eyebrow" id="leftEyebrow">操作区</p>
-            <h2 id="leftTitle">工作区</h2>
-          </div>
-          <span class="panel-hint" id="leftHint">拖入图片、整理方案、再一键生成</span>
+    <main id="mainView" class="main-view">
+      <section class="panel work-panel">
+        <h2>操作区</h2>
+        <div class="canvas-wrap" id="workCanvas">
+          <div class="placeholder">把图片拖到这里（仅工作区）</div>
+          <div class="thumb-grid" id="workThumbGrid"></div>
+          <button class="plus-btn" id="workUploadBtn" title="添加图片">+</button>
+          <input id="workFileInput" type="file" accept="image/*" multiple hidden>
         </div>
 
-        <div class="drop-zone" id="workspaceZone">
-          <div class="empty-state" id="workspaceEmpty">
-            <h3>拖入或上传参考图</h3>
-            <p>支持从本地上传，也可以把外部软件导出的图片拖入此区域。</p>
-            <div class="empty-actions">
-              <button class="primary-btn" id="uploadBtn">上传图片</button>
-              <button class="secondary-btn" id="useDemoBtn">加载示例</button>
-            </div>
-          </div>
-          <div class="image-grid" id="workspaceGrid"></div>
-          <input type="file" id="fileInput" accept="image/*" multiple hidden>
-        </div>
-
-        <div class="toolbar">
+        <div class="toolbar-row">
           <select id="qualitySelect">
-            <option>高质</option>
-            <option>标准</option>
-            <option>快速</option>
+            <option value="high">高清</option>
+            <option value="normal" selected>标准</option>
           </select>
           <select id="styleSelect">
-            <option>标签</option>
-            <option>建筑</option>
-            <option>室内</option>
-            <option>景观</option>
-          </select>
-          <select id="countSelect">
-            <option value="1">1:1</option>
-            <option value="2">1:2</option>
-            <option value="4">1:4</option>
+            <option value="realism">拟真</option>
+            <option value="minimal">极简</option>
+            <option value="cyber">赛博</option>
           </select>
           <select id="ratioSelect">
-            <option>分辨率 1K</option>
-            <option>分辨率 2K</option>
-            <option>分辨率 4K</option>
+            <option value="1:1" selected>1:1</option>
+            <option value="16:9">16:9</option>
+            <option value="9:16">9:16</option>
           </select>
-          <select id="sceneSelect">
-            <option>场景</option>
-            <option>办公</option>
-            <option>住宅</option>
-            <option>展厅</option>
-          </select>
-          <select id="angleSelect">
-            <option>镜头</option>
-            <option>广角</option>
-            <option>鸟瞰</option>
-            <option>近景</option>
+          <select id="splitSelect" title="同步调入右侧预览组图">
+            <option value="auto" selected>Auto</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="4">4</option>
           </select>
         </div>
       </section>
 
-      <section class="result-section">
-        <div class="panel-head">
-          <div>
-            <p class="eyebrow">生成结果区</p>
-            <h2 id="rightTitle">生成区</h2>
-          </div>
-          <div class="panel-meta">
-            <span class="status-badge" id="modeBadge">自定义预设</span>
-            <span class="model-badge">模型: <strong id="modelName">Nano Banana 2</strong></span>
-          </div>
-        </div>
-
-        <div class="result-board" id="resultBoard">
-          <div class="result-empty" id="resultEmpty">
-            <h3>结果会显示在这里</h3>
-            <p>点击右侧任一预设，底部提示词会自动填充。上传图片后点击生成，即可得到候选方案。</p>
-          </div>
-          <div class="result-grid" id="resultGrid"></div>
+      <section class="panel generate-panel">
+        <h2 id="generateTitle">生成展示区</h2>
+        <div class="canvas-wrap" id="generateCanvas">
+          <div class="placeholder">生成区（不支持拖入）</div>
+          <div class="thumb-grid" id="generateThumbGrid"></div>
         </div>
       </section>
 
-      <aside class="preset-sidebar">
-        <div class="sidebar-head">
-          <h3>右侧预设</h3>
-          <button class="text-btn" id="expandPresetBtn">自定义预设</button>
-        </div>
+      <aside class="preset-panel">
+        <h3>右侧预设词</h3>
         <div class="preset-list" id="presetList"></div>
       </aside>
     </main>
 
-    <footer class="prompt-bar">
-      <div class="prompt-main">
-        <div class="inline-switches">
-          <button class="chip active" data-mode="workspace">创意</button>
-          <button class="chip" data-mode="edit">改图</button>
-          <button class="chip auto-chip" id="autoSyncChip">Auto</button>
-          <span class="token-pill">1K</span>
-        </div>
-        <div class="prompt-input-wrap">
-          <textarea id="promptInput" rows="1" placeholder="输入提示词，或点击右侧预设自动填充..."></textarea>
-          <button class="icon-btn primary-round" id="sendBtn" title="生成">
-            <span>&uarr;</span>
-          </button>
-        </div>
-      </div>
-      <div class="footer-actions">
-        <button class="secondary-btn" id="prevBtn">前退</button>
-        <button class="primary-btn" id="generateBtn">生成(消耗 50 积分)</button>
-      </div>
+    <footer class="bottom-bar">
+      <input id="promptInput" type="text" placeholder="输入提示词...">
+      <button id="presetWordBtn">预设</button>
+      <button id="generateBtn" class="primary">生成（消耗 50 积分）</button>
     </footer>
   </div>
 
-  <div class="modal hidden" id="editModal" aria-hidden="true">
-    <div class="modal-backdrop" id="closeEditModal"></div>
-    <div class="modal-content">
-      <button class="modal-close" id="closeEditBtn">&times;</button>
-      <aside class="edit-tools">
-        <div class="tool-card">
-          <h3>图像修改面板</h3>
-          <label>明度<input type="range" min="0" max="100" value="68"></label>
-          <label>饱和度<input type="range" min="0" max="100" value="52"></label>
-          <div class="color-row">
-            <span class="swatch red"></span>
-            <span class="swatch green"></span>
-            <span class="swatch yellow"></span>
-            <span class="swatch blue"></span>
-            <span class="swatch white"></span>
-          </div>
+  <div class="modal hidden" id="editorModal" role="dialog" aria-modal="true">
+    <div class="modal-mask" id="modalMask"></div>
+    <div class="modal-body">
+      <button class="close-btn" id="modalCloseBtn">×</button>
+      <div class="edit-left">
+        <h4>图像修改面板</h4>
+        <div class="ctl-group">
+          <label>亮度 <input type="range" id="brightness" min="-100" max="100" value="0"></label>
+          <label>饱和度 <input type="range" id="saturation" min="-100" max="100" value="0"></label>
+          <label>清晰度 <input type="range" id="sharpness" min="-100" max="100" value="0"></label>
         </div>
-        <div class="tool-card">
-          <h3>文字覆盖</h3>
-          <label>字号
-            <select>
-              <option>大</option>
-              <option selected>中</option>
-              <option>小</option>
-            </select>
-          </label>
-          <label>颜色
-            <div class="color-row">
-              <span class="swatch red"></span>
-              <span class="swatch green"></span>
-              <span class="swatch yellow"></span>
-              <span class="swatch blue"></span>
-              <span class="swatch white"></span>
-            </div>
-          </label>
+        <button id="resetFilterBtn">清除滤镜参数</button>
+      </div>
+      <div class="edit-main">
+        <div class="edit-nav">
+          <button data-edit-tab="paint">涂抹</button>
+          <button data-edit-tab="expand">扩图</button>
+          <button data-edit-tab="replace">涂改替换</button>
+          <button data-edit-tab="preset">右侧预设词</button>
         </div>
-        <div class="tool-card">
-          <h3>清除与标注</h3>
-          <label>透明度<input type="range" min="0" max="100" value="40"></label>
-          <button class="secondary-btn block-btn">清除左半区域</button>
+        <div class="preview-wrap">
+          <img id="editorImage" alt="编辑预览图">
         </div>
-      </aside>
-
-      <section class="edit-stage">
-        <div class="edit-stage-top">
-          <div class="compare-tabs">
-            <button class="chip active">查询点</button>
-            <button class="chip">文案</button>
-            <button class="chip">标注</button>
-            <button class="chip">涂抹修改</button>
-          </div>
-          <div class="compare-actions">
-            <span>原图与现图对比</span>
-            <button class="icon-btn ghost">◧</button>
-            <button class="icon-btn ghost">⤓</button>
-            <button class="icon-btn ghost">🗑</button>
-          </div>
+        <div class="edit-bottom">
+          <input id="editorPromptInput" type="text" placeholder="向修改任务补充描述...">
+          <button id="confirmEditBtn" class="primary">确认修改</button>
         </div>
-
-        <div class="edit-preview-wrap">
-          <img id="editPreview" alt="编辑预览">
-          <div class="edit-overlay">双击图片可返回“修改”界面，底部输入框与主界面保持一致</div>
-        </div>
-
-        <div class="prompt-main edit-prompt">
-          <div class="inline-switches">
-            <button class="chip">创意</button>
-            <button class="chip active">改图</button>
-            <button class="chip auto-chip">Auto</button>
-            <span class="token-pill">1K</span>
-          </div>
-          <div class="prompt-input-wrap">
-            <textarea id="editPromptInput" rows="1" placeholder="在这里输入局部修改要求..."></textarea>
-            <button class="icon-btn primary-round" id="applyEditBtn">
-              <span>&uarr;</span>
-            </button>
-          </div>
-        </div>
-      </section>
+      </div>
+      <div class="edit-right">
+        <h4>操作</h4>
+        <button id="toggleCompareBtn">原图 / 现图对比</button>
+        <button id="downloadBtn">下载图片</button>
+        <button id="deleteBtn" class="danger">删除图片</button>
+      </div>
     </div>
   </div>
 
-  <template id="workspaceItemTpl">
-    <article class="image-card">
-      <img alt="参考图">
-      <div class="image-card-bar">
-        <span class="image-tag">参考图</span>
-        <div class="image-actions">
-          <button class="mini-btn edit-source-btn">修改</button>
-          <button class="mini-btn remove-source-btn">删除</button>
-        </div>
-      </div>
-    </article>
-  </template>
+  <script>
+const presets = [
+  "翻糖融合", "平面布局", "空间分镜", "SU特效覆盖", "空间静扩",
+  "材料替换", "一键平干", "景观季节", "灯光氛围", "透景转绘",
+  "手绘草图渲回", "软装分析", "地坡分析", "概念检索", "产品定制"
+];
 
-  <template id="resultItemTpl">
-    <article class="result-card">
-      <img alt="生成结果">
-      <div class="result-mask">
-        <button class="mini-btn result-edit-btn">修改</button>
-        <button class="mini-btn result-download-btn">下载</button>
-        <button class="mini-btn result-delete-btn">删除</button>
-      </div>
-    </article>
-  </template>
+const state = {
+  pageIndex: 0,
+  pages: ["创作思路", "生成区", "修改页"],
+  score: 0,
+  isLoggedIn: false,
+  workImages: [],
+  generatedImages: [],
+  selectedImageId: null,
+  compareMode: false
+};
 
-  <script src="./app.js"></script>
+const dom = {
+  switchPageBtn: document.getElementById("switchPageBtn"),
+  pageTitle: document.getElementById("pageTitle"),
+  generateTitle: document.getElementById("generateTitle"),
+  presetList: document.getElementById("presetList"),
+  promptInput: document.getElementById("promptInput"),
+  generateBtn: document.getElementById("generateBtn"),
+  loginBtn: document.getElementById("loginBtn"),
+  scoreValue: document.getElementById("scoreValue"),
+  workCanvas: document.getElementById("workCanvas"),
+  workThumbGrid: document.getElementById("workThumbGrid"),
+  generateThumbGrid: document.getElementById("generateThumbGrid"),
+  workUploadBtn: document.getElementById("workUploadBtn"),
+  workFileInput: document.getElementById("workFileInput"),
+  splitSelect: document.getElementById("splitSelect"),
+  presetWordBtn: document.getElementById("presetWordBtn"),
+  editorModal: document.getElementById("editorModal"),
+  modalCloseBtn: document.getElementById("modalCloseBtn"),
+  modalMask: document.getElementById("modalMask"),
+  editorImage: document.getElementById("editorImage"),
+  editorPromptInput: document.getElementById("editorPromptInput"),
+  confirmEditBtn: document.getElementById("confirmEditBtn"),
+  downloadBtn: document.getElementById("downloadBtn"),
+  deleteBtn: document.getElementById("deleteBtn"),
+  toggleCompareBtn: document.getElementById("toggleCompareBtn"),
+  brightness: document.getElementById("brightness"),
+  saturation: document.getElementById("saturation"),
+  sharpness: document.getElementById("sharpness"),
+  resetFilterBtn: document.getElementById("resetFilterBtn")
+};
+
+function uid() {
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function setScore(v) {
+  state.score = Math.max(0, v);
+  dom.scoreValue.textContent = String(state.score);
+}
+
+function renderPresets() {
+  dom.presetList.innerHTML = "";
+  presets.forEach((txt) => {
+    const btn = document.createElement("button");
+    btn.className = "preset-item";
+    btn.textContent = txt;
+    btn.addEventListener("click", () => {
+      dom.promptInput.value = dom.promptInput.value
+        ? `${dom.promptInput.value}，${txt}`
+        : txt;
+    });
+    dom.presetList.appendChild(btn);
+  });
+}
+
+function imageCard(item, source) {
+  const card = document.createElement("div");
+  card.className = "thumb-card";
+  const img = document.createElement("img");
+  img.src = item.url;
+  img.alt = item.name;
+  img.title = "双击进入修改页";
+  img.addEventListener("dblclick", () => {
+    openEditor(item.id);
+    state.pageIndex = 2;
+    renderPageTitle();
+  });
+  card.appendChild(img);
+
+  const actions = document.createElement("div");
+  actions.className = "thumb-actions";
+
+  if (source === "generate") {
+    const dl = document.createElement("button");
+    dl.textContent = "下载";
+    dl.addEventListener("click", () => downloadImage(item.url, item.name));
+    actions.appendChild(dl);
+  }
+
+  const del = document.createElement("button");
+  del.className = "danger";
+  del.textContent = "删除";
+  del.addEventListener("click", () => {
+    if (source === "work") {
+      state.workImages = state.workImages.filter((x) => x.id !== item.id);
+    } else {
+      state.generatedImages = state.generatedImages.filter((x) => x.id !== item.id);
+    }
+    renderThumbs();
+  });
+  actions.appendChild(del);
+  card.appendChild(actions);
+
+  return card;
+}
+
+function renderThumbs() {
+  dom.workThumbGrid.innerHTML = "";
+  dom.generateThumbGrid.innerHTML = "";
+  state.workImages.forEach((img) => dom.workThumbGrid.appendChild(imageCard(img, "work")));
+  state.generatedImages.forEach((img) => dom.generateThumbGrid.appendChild(imageCard(img, "generate")));
+}
+
+function readFilesToWork(files) {
+  const arr = Array.from(files).filter((f) => f.type.startsWith("image/"));
+  arr.forEach((file) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      state.workImages.unshift({
+        id: uid(),
+        name: file.name,
+        url: String(reader.result),
+        originalUrl: String(reader.result)
+      });
+      renderThumbs();
+      syncToGenerateBySplit();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function syncToGenerateBySplit() {
+  const split = dom.splitSelect.value;
+  if (split === "auto") {
+    state.generatedImages = state.workImages.map((x) => ({ ...x, id: uid() }));
+  } else {
+    const n = Number(split);
+    state.generatedImages = state.workImages.slice(0, n).map((x) => ({ ...x, id: uid() }));
+  }
+  renderThumbs();
+}
+
+function renderPageTitle() {
+  const title = state.pages[state.pageIndex];
+  dom.pageTitle.textContent = title;
+  dom.generateTitle.textContent = title === "生成区" ? "生成区" : "生成展示区";
+}
+
+function openEditor(id) {
+  const target = [...state.workImages, ...state.generatedImages].find((x) => x.id === id);
+  if (!target) return;
+  state.selectedImageId = target.id;
+  dom.editorImage.src = target.url;
+  dom.editorModal.classList.remove("hidden");
+}
+
+function closeEditor() {
+  dom.editorModal.classList.add("hidden");
+}
+
+function getSelectedImage() {
+  return [...state.workImages, ...state.generatedImages].find((x) => x.id === state.selectedImageId) || null;
+}
+
+function replaceSelectedImage(newUrl) {
+  state.workImages = state.workImages.map((x) =>
+    x.id === state.selectedImageId ? { ...x, url: newUrl } : x
+  );
+  state.generatedImages = state.generatedImages.map((x) =>
+    x.id === state.selectedImageId ? { ...x, url: newUrl } : x
+  );
+  renderThumbs();
+}
+
+function downloadImage(url, name) {
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name || `image-${Date.now()}.png`;
+  a.click();
+}
+
+function applyFilterPreview() {
+  const b = Number(dom.brightness.value);
+  const s = Number(dom.saturation.value);
+  const sh = Number(dom.sharpness.value);
+  dom.editorImage.style.filter = `brightness(${100 + b}%) saturate(${100 + s}%) contrast(${100 + sh}%)`;
+}
+
+function simulateGenerate() {
+  if (!state.isLoggedIn) {
+    alert("请先登录后再生成。");
+    return;
+  }
+  if (state.score < 50) {
+    alert("积分不足，无法执行生成。");
+    return;
+  }
+  if (!dom.promptInput.value.trim()) {
+    alert("请先输入提示词。");
+    return;
+  }
+  if (state.workImages.length === 0) {
+    alert("请先在工作区添加图片。");
+    return;
+  }
+  setScore(state.score - 50);
+  state.generatedImages = state.workImages.map((x) => ({ ...x, id: uid() }));
+  renderThumbs();
+}
+
+function bindEvents() {
+  dom.switchPageBtn.addEventListener("click", () => {
+    state.pageIndex = (state.pageIndex + 1) % state.pages.length;
+    renderPageTitle();
+  });
+
+  dom.loginBtn.addEventListener("click", () => {
+    state.isLoggedIn = !state.isLoggedIn;
+    if (state.isLoggedIn && state.score === 0) setScore(60);
+    dom.loginBtn.textContent = state.isLoggedIn ? "退出" : "登录";
+  });
+
+  dom.workUploadBtn.addEventListener("click", () => dom.workFileInput.click());
+  dom.workFileInput.addEventListener("change", (e) => readFilesToWork(e.target.files || []));
+
+  dom.workCanvas.addEventListener("dragover", (e) => e.preventDefault());
+  dom.workCanvas.addEventListener("drop", (e) => {
+    e.preventDefault();
+    readFilesToWork(e.dataTransfer?.files || []);
+  });
+
+  dom.generateBtn.addEventListener("click", simulateGenerate);
+  dom.splitSelect.addEventListener("change", syncToGenerateBySplit);
+
+  dom.presetWordBtn.addEventListener("click", () => {
+    dom.promptInput.focus();
+    dom.promptInput.value = `${dom.promptInput.value}${dom.promptInput.value ? "，" : ""}基础灯光`;
+  });
+
+  dom.modalCloseBtn.addEventListener("click", closeEditor);
+  dom.modalMask.addEventListener("click", closeEditor);
+
+  dom.confirmEditBtn.addEventListener("click", () => {
+    const img = getSelectedImage();
+    if (!img) return;
+    replaceSelectedImage(dom.editorImage.src);
+    alert("修改已应用，已同步到主界面的生成区。");
+  });
+
+  dom.downloadBtn.addEventListener("click", () => {
+    const img = getSelectedImage();
+    if (!img) return;
+    downloadImage(dom.editorImage.src, img.name);
+  });
+
+  dom.deleteBtn.addEventListener("click", () => {
+    state.workImages = state.workImages.filter((x) => x.id !== state.selectedImageId);
+    state.generatedImages = state.generatedImages.filter((x) => x.id !== state.selectedImageId);
+    renderThumbs();
+    closeEditor();
+  });
+
+  dom.toggleCompareBtn.addEventListener("click", () => {
+    const img = getSelectedImage();
+    if (!img) return;
+    state.compareMode = !state.compareMode;
+    dom.editorImage.src = state.compareMode ? img.originalUrl || img.url : img.url;
+  });
+
+  [dom.brightness, dom.saturation, dom.sharpness].forEach((el) => {
+    el.addEventListener("input", applyFilterPreview);
+  });
+
+  dom.resetFilterBtn.addEventListener("click", () => {
+    dom.brightness.value = "0";
+    dom.saturation.value = "0";
+    dom.sharpness.value = "0";
+    dom.editorImage.style.filter = "";
+  });
+}
+
+function init() {
+  renderPresets();
+  renderThumbs();
+  renderPageTitle();
+  bindEvents();
+}
+
+init();
+  </script>
 </body>
 </html>
+
