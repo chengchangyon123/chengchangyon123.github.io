@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <style>
-        /* 全局变量：严格复刻原图颜色 */
+        /* ====================== 全局变量：严格复刻原图颜色 ====================== */
         :root {
             --bg-main: #050714;
             --bg-panel: #0a0e1a;
@@ -40,7 +40,7 @@
                 radial-gradient(circle at 20% 10%, rgba(96, 165, 250, 0.05) 0%, transparent 30%);
         }
 
-        /* 全局动画 */
+        /* ====================== 全局动画 ====================== */
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
@@ -56,17 +56,18 @@
             100% { transform: scale(1); }
         }
 
+        /* ====================== 页面切换核心逻辑：同一时间只显示一个页面 ====================== */
         .page {
             display: none;
             width: 100%;
-            height: 100%;
+            height: calc(100vh - 52px);
             animation: fadeIn 0.25s ease;
         }
         .page.active {
             display: flex;
         }
 
-        /* 顶部导航栏（完全复刻原图） */
+        /* ====================== 顶部导航栏（完全复刻原图） ====================== */
         .top-nav {
             height: 52px;
             background-color: rgba(10, 14, 26, 0.9);
@@ -124,14 +125,7 @@
             animation: borderGlow 1.5s infinite;
         }
 
-        /* 主内容区布局 */
-        .main-container {
-            flex: 1;
-            display: flex;
-            height: calc(100vh - 52px);
-        }
-
-        /* ====================== 1. 首页创作界面（完全复刻） ====================== */
+        /* ====================== 1. 首页创作界面（完全复刻原图布局） ====================== */
         #page-home {
             display: flex;
             width: 100%;
@@ -218,6 +212,10 @@
             align-items: center;
             justify-content: space-between;
             padding: 0 20px;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
         }
         .control-left {
             display: flex;
@@ -973,7 +971,7 @@
     </div>
 
     <!-- 主内容区 -->
-    <div class="main-container">
+    <div class="main-container" style="height: calc(100vh - 52px); position: relative;">
         <!-- 1. 首页创作界面 -->
         <div id="page-home" class="page active">
             <div class="workspace-area">
@@ -987,6 +985,7 @@
                 <div class="workspace-header">生成区</div>
             </div>
             <div class="preset-sidebar">
+                <div class="preset-btn" onclick="switchPage('page-edit')">图片编辑</div>
                 <div class="preset-btn">创作风暴</div>
                 <div class="preset-btn">超级融合</div>
                 <div class="preset-btn">毛胚白膜生图</div>
@@ -1004,6 +1003,31 @@
                 <div class="preset-btn">地块分析</div>
                 <div class="preset-btn">概念推演</div>
                 <div class="preset-btn">建筑渲染</div>
+            </div>
+            <div class="bottom-control-bar">
+                <div class="control-left">
+                    <select class="control-select">
+                        <option>画幅</option>
+                        <option>Auto</option>
+                    </select>
+                    <select class="control-select">
+                        <option>分辨率</option>
+                        <option>1K</option>
+                    </select>
+                    <select class="control-select">
+                        <option>批量</option>
+                        <option>1张</option>
+                    </select>
+                    <select class="control-select">
+                        <option>模型</option>
+                        <option>Gemini Banana2</option>
+                    </select>
+                </div>
+                <input type="text" class="prompt-input" placeholder="输入提示词...">
+                <div class="control-right">
+                    <button class="custom-preset-btn">自定义预设</button>
+                    <button class="generate-btn">生成 (消耗: 7积分)</button>
+                </div>
             </div>
         </div>
 
@@ -1097,6 +1121,31 @@
                 <div class="preset-btn">地块分析</div>
                 <div class="preset-btn">概念推演</div>
                 <div class="preset-btn">建筑渲染</div>
+            </div>
+            <div class="bottom-control-bar">
+                <div class="control-left">
+                    <select class="control-select">
+                        <option>画幅</option>
+                        <option>Auto</option>
+                    </select>
+                    <select class="control-select">
+                        <option>分辨率</option>
+                        <option>1K</option>
+                    </select>
+                    <select class="control-select">
+                        <option>批量</option>
+                        <option>1张</option>
+                    </select>
+                    <select class="control-select">
+                        <option>模型</option>
+                        <option>Gemini Banana2</option>
+                    </select>
+                </div>
+                <input type="text" class="prompt-input" placeholder="输入提示词...">
+                <div class="control-right">
+                    <button class="custom-preset-btn">自定义预设</button>
+                    <button class="generate-btn">生成 (消耗: 7积分)</button>
+                </div>
             </div>
         </div>
 
@@ -1246,38 +1295,4 @@
 
         <!-- 5. 企业充值界面 -->
         <div id="page-enterprise" class="page">
-            <div class="vip-header">
-                <div class="vip-title">选择适合你的方案</div>
-                <div class="vip-subtitle">升级专属套餐，立即解锁更多功能</div>
-            </div>
-            <div class="vip-info-bar">
-                <div class="info-item"><span class="info-label">当前积分</span> <span class="info-value">633</span></div>
-                <div class="info-item"><span class="info-label">当前套餐</span> <span class="info-value">免费版</span></div>
-                <div class="info-item"><button class="control-select">积分记录</button></div>
-            </div>
-            <div class="tab-bar">
-                <button class="tab-btn">月卡</button>
-                <button class="tab-btn">年卡 <span style="background-color: red; color: white; font-size: 10px; padding: 1px 4px; border-radius: 3px;">热卖</span></button>
-                <button class="tab-btn">直充</button>
-                <button class="tab-btn active">中、大型企业</button>
-                <button class="tab-btn">资费说明</button>
-            </div>
-            <div class="enterprise-plans-container">
-                <div class="enterprise-plan-card">
-                    <div style="text-align: center;">
-                        <div class="enterprise-plan-title">中型企业充值 <span style="background-color: orange; color: white; font-size: 10px; padding: 1px 4px; border-radius: 3px;">推荐</span></div>
-                        <div class="enterprise-plan-subtitle">灵活充值，满足企业高效办公需求</div>
-                        <div class="enterprise-plan-points">10,000 <span style="font-size: 14px;">积分</span></div>
-                        <div class="enterprise-plan-price">¥1,000</div>
-                        <div class="enterprise-plan-unit">单价: ¥0.10 / 积分</div>
-                    </div>
-                    <div style="text-align: left; margin: 16px 0;">
-                        <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">权益包含</div>
-                        <div class="enterprise-features">
-                            <div class="enterprise-feature-item"><i class="fa fa-check" style="color: var(--accent-green);"></i> 积分长期有效</div>
-                            <div class="enterprise-feature-item"><i class="fa fa-check" style="color: var(--accent-green);"></i> 批量账户管理</div>
-                            <div class="enterprise-feature-item"><i class="fa fa-check" style="color: var(--accent-green);"></i> 专属技术支持</div>
-                            <div class="enterprise-feature-item"><i class="fa fa-check" style="color: var(--accent-green);"></i> 企业专属折扣</div>
-                        </div>
-                    </div>
-                    <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin: 16px 0;">
+            <div
