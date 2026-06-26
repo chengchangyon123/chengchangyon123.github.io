@@ -1,340 +1,137 @@
 <!doctype html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DesignerAI UI Prototype</title>
-    <link rel="stylesheet" href="./styles.css" />
-  </head>
-  <body>
-    <div class="app-shell">
-      <aside class="rail">
-        <div class="brand">
-          <div class="brand-mark">D</div>
-          <div>
-            <div class="brand-name">DesignerAI</div>
-            <div class="brand-sub">室内 / 建筑智能体</div>
-          </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DesignerAI 室内建筑设计智能体</title>
+  <style>
+    :root{
+      --bg:#050a12;--panel:#08111f;--panel2:#0b1628;--line:#173259;--soft:#10233f;
+      --text:#e8f0ff;--muted:#8da2bf;--blue:#2f7df6;--green:#18d483;--radius:8px
+    }
+    *{box-sizing:border-box}
+    body{margin:0;min-width:1180px;background:var(--bg);color:var(--text);font-family:"Microsoft YaHei",Arial,sans-serif}
+    button,input,textarea,select{font:inherit}button{cursor:pointer;color:inherit}
+    .app{display:grid;grid-template-columns:236px 1fr;min-height:100vh}
+    .rail{display:flex;flex-direction:column;gap:22px;padding:18px;border-right:1px solid var(--line);background:#050b15}
+    .brand{display:flex;gap:12px;align-items:center}.logo{width:42px;height:42px;border:1px solid var(--blue);border-radius:50%;display:grid;place-items:center;background:#102545;font-weight:800}
+    .brand strong{font-size:20px}.muted,.brand small,.crumb,.eyebrow{color:var(--muted);font-size:12px}
+    .nav{display:grid;gap:10px}.nav button{padding:12px;border:1px solid var(--soft);border-radius:var(--radius);background:transparent;text-align:left}
+    .nav button.active,.nav button:hover{border-color:var(--blue);background:#0d1d35}.nav span{display:block;font-weight:700}
+    .quota{margin-top:auto;border:1px solid var(--soft);border-radius:var(--radius);padding:12px;background:var(--panel);display:flex;justify-content:space-between;color:var(--muted)}
+    .quota strong{color:var(--green)}
+    .main{display:grid;grid-template-rows:66px 1fr}.top{display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--line)}
+    .title{font-size:20px;font-weight:700;margin-top:4px}.actions{display:flex;gap:10px;align-items:center}
+    .btn,.primary,.icon{border:1px solid var(--line);border-radius:var(--radius);background:#0a1424;padding:8px 12px}
+    .primary{border-color:#2e79ee;background:linear-gradient(180deg,#3c86f7,#1f63d5);font-weight:700}.small{padding:7px 10px;font-size:12px}.full{width:100%}
+    .view{display:none}.view.active{display:block}.workspace.active{display:grid;grid-template-rows:1fr auto;min-height:0}
+    .work-layout{display:grid;grid-template-columns:29% 1fr 270px;gap:14px;padding:14px;min-height:0}
+    .edit-layout{display:grid;grid-template-columns:220px 1fr 300px;gap:14px;padding:14px}
+    .panel{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);overflow:hidden;min-width:0}
+    .head{min-height:62px;padding:14px;border-bottom:1px solid var(--soft);display:flex;justify-content:space-between;align-items:center}.head h2{margin:4px 0 0;font-size:16px}
+    .upload{margin:14px;padding:24px;min-height:230px;border:1px dashed #244b80;border-radius:var(--radius);display:grid;place-items:center;text-align:center;gap:10px;background:#070f1d}
+    .upload h3{margin:0}.upload p{margin:0;color:var(--muted);line-height:1.6;max-width:360px}.upload-icon{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#102545;color:#56a1ff;font-size:24px}
+    .asset-list{display:grid;gap:10px;padding:0 14px 14px}.asset{display:grid;grid-template-columns:72px 1fr;gap:10px;align-items:center;padding:8px;border:1px solid var(--soft);border-radius:var(--radius);background:#07101d}
+    .asset.selected{border-color:var(--blue)}.asset img{width:72px;height:52px;border-radius:6px;object-fit:cover}
+    .seg{display:flex;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}.seg button{border:0;background:#0a1424;color:var(--muted);padding:7px 10px}.seg .active{background:#173866;color:#fff}
+    .empty{display:grid;place-items:center;align-content:center;gap:10px;min-height:380px;padding:24px;text-align:center;color:var(--muted)}.empty h3{color:#fff;margin:0;font-size:18px}.empty p{max-width:520px;line-height:1.6}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:14px;padding:14px}
+    .card{position:relative;border:1px solid var(--soft);border-radius:var(--radius);overflow:hidden;background:#050b15}.card:hover{border-color:var(--blue)}.card img{display:block;width:100%;aspect-ratio:16/10;object-fit:cover}
+    .card footer{padding:10px;display:flex;justify-content:space-between;align-items:center;color:var(--muted)}.chip{padding:5px 8px;border:1px solid rgba(255,255,255,.16);border-radius:999px;background:rgba(5,10,18,.72);font-size:12px;color:#dbe9ff}
+    .hover{position:absolute;right:10px;top:10px;display:flex;gap:6px;opacity:0}.card:hover .hover{opacity:1}
+    .preset-wrap{padding:12px;display:grid;gap:10px;overflow:auto;max-height:calc(100vh - 160px)}details{border:1px solid var(--soft);border-radius:var(--radius);padding:8px;background:#07101d}
+    summary{cursor:pointer;font-weight:700;color:#c8d9f5;margin-bottom:8px}.preset,.tool,.version{width:100%;display:block;margin-top:8px;padding:9px 10px;text-align:left;border:1px solid var(--line);border-radius:var(--radius);background:#0a1424;color:#c8d9f5}
+    .preset.active,.tool.active,.version.active{border-color:var(--blue);background:#12305a;color:#fff}
+    .prompt{border-top:1px solid var(--line);padding:12px 14px;background:#050b15}.settings{display:flex;gap:10px;margin-bottom:10px}.settings label{font-size:12px;color:var(--muted)}
+    select,input,textarea{border:1px solid var(--soft);border-radius:6px;background:#080f1c;color:var(--text);outline:none}select{padding:7px 9px;min-width:84px}input{padding:10px;min-width:260px}textarea{width:100%;min-height:44px;padding:12px;resize:vertical}
+    .prompt-row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:end}
+    .side{padding:14px}.section{display:grid;gap:8px;margin-top:18px}.section h3{font-size:14px;color:var(--muted);padding-bottom:8px;border-bottom:1px solid var(--soft)}
+    .canvas{display:grid;grid-template-rows:54px 1fr}.toolbar{padding:10px 14px;border-bottom:1px solid var(--soft);display:flex;justify-content:space-between;align-items:center}
+    .canvas-body{display:grid;place-items:center;background:#030811;padding:20px;min-height:560px}.canvas-body img{max-width:100%;max-height:calc(100vh - 230px);object-fit:contain;border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 18px 60px rgba(0,0,0,.45)}
+    .field{display:grid;gap:6px;color:var(--muted);font-size:12px;margin-bottom:14px}.field textarea{min-height:130px}.cost{display:flex;justify-content:space-between;padding:12px;border:1px solid var(--soft);border-radius:var(--radius);color:var(--muted);margin-bottom:14px}.cost strong{color:var(--green)}
+    .module{height:calc(100vh - 66px);overflow:auto}.module-head{padding:18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:18px}.module-head h2{margin:0}.module-head p{color:var(--muted)}
+    .materials{display:grid;grid-template-columns:repeat(3,minmax(260px,1fr));gap:14px;padding:18px}.mat-section{border:1px solid var(--line);border-radius:var(--radius);padding:14px;background:var(--panel)}.mat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+    .mat,.hist{border:1px solid var(--soft);border-radius:var(--radius);overflow:hidden;background:#07101d}.mat img{width:100%;aspect-ratio:1/1;object-fit:cover}.mat div,.hist div{padding:8px;font-size:12px}
+    .history{padding:18px;display:grid;gap:26px}.date{display:flex;justify-content:space-between;margin-bottom:12px}.hist-grid{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:12px}.hist img{width:100%;aspect-ratio:4/3;object-fit:cover}
+    .billing-hero{text-align:center;padding:44px 18px 28px}.billing-hero h2{font-size:30px;margin:0}.billing-hero p{color:var(--muted)}.plans{display:grid;grid-template-columns:repeat(3,minmax(260px,380px));justify-content:center;gap:18px;padding:30px}.plan{position:relative;display:grid;gap:14px;padding:22px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel)}.plan.reco{border-color:var(--blue)}.plan strong{font-size:38px}.plan p,.plan li{color:#b8cbe7}.badge{position:absolute;top:-12px;right:20px;padding:4px 10px;border-radius:999px;background:#153c72}
+    .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.68);display:grid;place-items:center}.modal-bg[hidden]{display:none}.modal{width:min(960px,calc(100vw - 48px));min-height:420px;border:1px solid var(--blue);border-radius:var(--radius);background:var(--panel);display:grid;grid-template-columns:300px 1fr;gap:14px;padding:14px;position:relative}.modal aside,.modal main{border:1px solid var(--soft);border-radius:var(--radius);padding:16px;background:#07101d}.close{position:absolute;right:12px;top:8px;border:0;background:transparent;font-size:28px}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="rail">
+      <div class="brand"><div class="logo">D</div><div><strong>DesignerAI</strong><br><small>室内 / 建筑智能体</small></div></div>
+      <nav class="nav">
+        <button class="active" data-view="workspace"><span>工作台</span><small>生成方案</small></button>
+        <button data-view="materials"><span>物料中心</span><small>材质引用</small></button>
+        <button data-view="history"><span>历史记录</span><small>继续编辑</small></button>
+        <button data-view="billing"><span>积分套餐</span><small>126499 分</small></button>
+      </nav>
+      <div class="quota"><span>本次预计消耗</span><strong>70 分</strong></div>
+      <button class="btn full" id="openAccount">企业管理</button>
+    </aside>
+    <main class="main">
+      <header class="top">
+        <div><div class="crumb" id="crumb">资源中心 / AI 工作台</div><div class="title" id="pageTitle">生成模式</div></div>
+        <div class="actions"><button class="btn">公告</button><button class="btn">邀请加入</button><button class="btn" data-view="history">历史记录</button><button class="btn" data-view="billing">积分 126499</button></div>
+      </header>
+      <section class="view workspace active" id="workspace">
+        <div class="work-layout" id="generationMode">
+          <section class="panel">
+            <div class="head"><div><span class="eyebrow">工作区</span><h2>输入素材</h2></div><button class="icon">+</button></div>
+            <div class="upload"><div class="upload-icon">↑</div><h3>拖入户型图、SU 截图或参考图</h3><p>支持空间照片、材质图、草图、总平截图。上传后可设置素材类型与参考强度。</p><button class="primary small">上传素材</button></div>
+            <div class="asset-list">
+              <article class="asset selected"><img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=640&q=80"><div><b>客厅参考图</b><br><span class="muted">强参考 / 现代自然</span></div></article>
+              <article class="asset"><img src="https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=640&q=80"><div><b>建筑外观</b><br><span class="muted">中参考 / 立面材质</span></div></article>
+            </div>
+          </section>
+          <section class="panel">
+            <div class="head"><div><span class="eyebrow">生成区</span><h2>方案结果</h2></div><div class="seg"><button class="active">4 宫格</button><button>对比</button><button>收藏</button></div></div>
+            <div class="empty" id="emptyState"><h3>生成结果将在这里展示</h3><p>选择右侧任务，输入空间需求后生成。点击任意生成图，会自动切换到图片编辑界面。</p></div>
+            <div class="grid" id="resultGrid" hidden></div>
+          </section>
+          <aside class="panel">
+            <div class="head"><div><span class="eyebrow">固定预设组</span><h2>设计任务</h2></div></div>
+            <div class="preset-wrap">
+              <details open><summary>概念与分析</summary><button class="preset active">创作风暴</button><button class="preset">概念推演</button><button class="preset">地域分析</button><button class="preset">FF&E 软装分析</button></details>
+              <details open><summary>空间规划</summary><button class="preset">平面布局</button><button class="preset">空间分镜</button><button class="preset">空间爆炸</button><button class="preset">机能分析</button></details>
+              <details open><summary>效果表现</summary><button class="preset">SU 转效果图</button><button class="preset">建筑渲染</button><button class="preset">灯光氛围</button><button class="preset">总平填色</button></details>
+              <details><summary>图纸与排版</summary><button class="preset">材料排版</button><button class="preset">一键彩平</button><button class="preset">景观彩平</button><button class="preset">通道转换</button></details>
+            </div>
+          </aside>
         </div>
-
-        <nav class="rail-nav" aria-label="主导航">
-          <button class="nav-item active" data-view="workspace">
-            <span>工作台</span>
-            <small>生成方案</small>
-          </button>
-          <button class="nav-item" data-view="materials">
-            <span>物料中心</span>
-            <small>材质引用</small>
-          </button>
-          <button class="nav-item" data-view="history">
-            <span>历史记录</span>
-            <small>继续编辑</small>
-          </button>
-          <button class="nav-item" data-view="billing">
-            <span>积分套餐</span>
-            <small>126499 分</small>
-          </button>
-        </nav>
-
-        <div class="rail-footer">
-          <div class="quota">
-            <span>本次预计消耗</span>
-            <strong id="railCost">70 分</strong>
-          </div>
-          <button class="ghost full" id="openAccount">企业管理</button>
+        <div class="edit-layout" id="editorMode" hidden>
+          <aside class="panel side"><button class="btn full" id="backToResults">返回生成结果</button><div class="section"><h3>AI 编辑</h3><button class="tool active">高清修复</button><button class="tool">一键放大</button><button class="tool">局部重绘</button><button class="tool">擦除替换</button><button class="tool">扩图</button><button class="tool">材质替换</button><button class="tool">灯光调整</button></div><div class="section"><h3>版本</h3><button class="version active">V1 原始生成</button><button class="version">V2 高清修复</button><button class="version">V3 材质替换</button></div></aside>
+          <section class="panel canvas"><div class="toolbar"><b>图片编辑 / <span id="selectedTitle">方案 A</span></b><div class="actions"><button class="btn">原图对比</button><button class="btn">适应屏幕</button><button class="btn">下载</button><button class="primary small">保存为新版本</button></div></div><div class="canvas-body"><img id="selectedImage"></div></section>
+          <aside class="panel side"><div class="head"><div><span class="eyebrow">当前工具</span><h2 id="activeTool">高清修复</h2></div></div><label class="field">修复强度 <input type="range" min="0" max="100" value="72"></label><label class="field">保留构图 <select><option>强保留</option><option>中等保留</option><option>自由优化</option></select></label><label class="field">编辑提示词 <textarea>提升画面清晰度，保留原有空间结构、家具关系和灯光氛围。</textarea></label><div class="cost"><span>预计消耗</span><strong>35 分</strong></div><button class="primary full">开始处理</button></aside>
         </div>
-      </aside>
-
-      <main class="main">
-        <header class="topbar">
-          <div>
-            <div class="crumb" id="crumb">资源中心 / AI 工作台</div>
-            <h1 id="pageTitle">生成模式</h1>
-          </div>
-          <div class="top-actions">
-            <button class="ghost">公告</button>
-            <button class="ghost">邀请加入</button>
-            <button class="ghost" data-view="history">历史记录</button>
-            <button class="points" data-view="billing">积分 126499</button>
-          </div>
-        </header>
-
-        <section class="view workspace-view active" id="workspaceView">
-          <div class="workspace-layout" id="generationMode">
-            <section class="panel source-panel">
-              <div class="panel-head">
-                <div>
-                  <span class="eyebrow">工作区</span>
-                  <h2>输入素材</h2>
-                </div>
-                <button class="icon-button" title="添加素材">+</button>
-              </div>
-
-              <div class="upload-zone">
-                <div class="upload-icon">↑</div>
-                <h3>拖入户型图、SU 截图或参考图</h3>
-                <p>支持空间照片、材质图、草图、总平截图；上传后可设置参考强度。</p>
-                <button class="primary small">上传素材</button>
-              </div>
-
-              <div class="asset-list">
-                <article class="asset-card selected">
-                  <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=640&q=80" alt="室内参考图" />
-                  <div>
-                    <strong>客厅参考图</strong>
-                    <span>强参考 / 现代自然</span>
-                  </div>
-                </article>
-                <article class="asset-card">
-                  <img src="https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=640&q=80" alt="建筑参考图" />
-                  <div>
-                    <strong>建筑外观</strong>
-                    <span>中参考 / 立面材质</span>
-                  </div>
-                </article>
-              </div>
-            </section>
-
-            <section class="panel result-panel">
-              <div class="panel-head">
-                <div>
-                  <span class="eyebrow">生成区</span>
-                  <h2>方案结果</h2>
-                </div>
-                <div class="segmented">
-                  <button class="active">4 宫格</button>
-                  <button>对比</button>
-                  <button>收藏</button>
-                </div>
-              </div>
-
-              <div class="empty-state" id="emptyState">
-                <h3>生成结果将在这里展示</h3>
-                <p>选择右侧任务，输入空间需求后生成。点击任意生成图会自动进入图片编辑界面。</p>
-              </div>
-
-              <div class="result-grid" id="resultGrid" hidden></div>
-            </section>
-
-            <aside class="panel preset-panel">
-              <div class="panel-head compact">
-                <div>
-                  <span class="eyebrow">固定预设组</span>
-                  <h2>设计任务</h2>
-                </div>
-              </div>
-
-              <div class="preset-groups">
-                <details open>
-                  <summary>概念与分析</summary>
-                  <button class="preset active">创作风暴</button>
-                  <button class="preset">概念推演</button>
-                  <button class="preset">地域分析</button>
-                  <button class="preset">FF&E 软装分析</button>
-                </details>
-                <details open>
-                  <summary>空间规划</summary>
-                  <button class="preset">平面布局</button>
-                  <button class="preset">空间分镜</button>
-                  <button class="preset">空间爆炸</button>
-                  <button class="preset">机能分析</button>
-                </details>
-                <details open>
-                  <summary>效果表现</summary>
-                  <button class="preset">SU 转效果图</button>
-                  <button class="preset">建筑渲染</button>
-                  <button class="preset">灯光氛围</button>
-                  <button class="preset">总平填色</button>
-                </details>
-                <details>
-                  <summary>图纸与排版</summary>
-                  <button class="preset">材料排版</button>
-                  <button class="preset">一键彩平</button>
-                  <button class="preset">景观彩平</button>
-                  <button class="preset">通道转换</button>
-                </details>
-              </div>
-            </aside>
-          </div>
-
-          <div class="editor-layout" id="editorMode" hidden>
-            <aside class="panel edit-sidebar">
-              <button class="ghost full" id="backToResults">返回生成结果</button>
-              <div class="tool-section">
-                <h3>AI 编辑</h3>
-                <button class="tool active" data-tool="高清修复">高清修复</button>
-                <button class="tool" data-tool="一键放大">一键放大</button>
-                <button class="tool" data-tool="局部重绘">局部重绘</button>
-                <button class="tool" data-tool="擦除替换">擦除替换</button>
-                <button class="tool" data-tool="扩图">扩图</button>
-                <button class="tool" data-tool="材质替换">材质替换</button>
-                <button class="tool" data-tool="灯光调整">灯光调整</button>
-              </div>
-              <div class="tool-section">
-                <h3>版本</h3>
-                <button class="version active">V1 原始生成</button>
-                <button class="version">V2 高清修复</button>
-                <button class="version">V3 材质替换</button>
-              </div>
-            </aside>
-
-            <section class="panel canvas-panel">
-              <div class="canvas-toolbar">
-                <div class="mode-label">图片编辑 / <span id="selectedTitle">方案 A</span></div>
-                <div class="toolbar-actions">
-                  <button class="ghost">原图对比</button>
-                  <button class="ghost">适应屏幕</button>
-                  <button class="ghost">下载</button>
-                  <button class="primary small">保存为新版本</button>
-                </div>
-              </div>
-              <div class="image-canvas">
-                <img id="selectedImage" src="" alt="当前编辑图片" />
-              </div>
-            </section>
-
-            <aside class="panel edit-params">
-              <div class="panel-head compact">
-                <div>
-                  <span class="eyebrow">当前工具</span>
-                  <h2 id="activeToolTitle">高清修复</h2>
-                </div>
-              </div>
-              <label class="field">
-                <span>修复强度</span>
-                <input type="range" min="0" max="100" value="72" />
-              </label>
-              <label class="field">
-                <span>保留构图</span>
-                <select>
-                  <option>强保留</option>
-                  <option>中等保留</option>
-                  <option>自由优化</option>
-                </select>
-              </label>
-              <label class="field">
-                <span>编辑提示词</span>
-                <textarea>提升画面清晰度，保留原有空间结构、家具关系和灯光氛围。</textarea>
-              </label>
-              <div class="cost-box">
-                <span>预计消耗</span>
-                <strong>35 分</strong>
-              </div>
-              <button class="primary full">开始处理</button>
-            </aside>
-          </div>
-
-          <footer class="promptbar" id="promptbar">
-            <div class="settings">
-              <label>画幅 <select><option>Auto</option><option>16:9</option><option>4:3</option></select></label>
-              <label>分辨率 <select><option>1K</option><option>2K</option><option>4K</option></select></label>
-              <label>批量 <select id="batchCount"><option>4 张</option><option>1 张</option><option>8 张</option></select></label>
-              <label>任务 <select><option>SU 转效果图</option><option>平面布局</option><option>材料排版</option></select></label>
-            </div>
-            <div class="prompt-input">
-              <textarea id="promptInput">现代自然风客厅，保留原始空间结构，木饰面背景墙，柔和无主灯，浅灰石材地面，适合高端住宅展示。</textarea>
-              <button class="ghost">自定义预设</button>
-              <button class="primary" id="generateBtn">生成（消耗：70分）</button>
-            </div>
-          </footer>
-        </section>
-
-        <section class="view materials-view" id="materialsView">
-          <div class="module-head">
-            <div>
-              <h2>物料中心</h2>
-              <p>选择物料后可加入提示词，也可在图片编辑中用于材质替换。</p>
-            </div>
-            <div class="search-row">
-              <input placeholder="搜索石材、木饰面、玻璃、皮革" />
-              <button class="primary small">加入当前提示词</button>
-            </div>
-          </div>
-          <div class="material-grid" id="materialGrid"></div>
-        </section>
-
-        <section class="view history-view" id="historyView">
-          <div class="module-head">
-            <div>
-              <h2>历史记录</h2>
-              <p>按项目、任务和日期回溯结果，支持继续编辑和基于图片再生成。</p>
-            </div>
-            <div class="search-row">
-              <input placeholder="搜索日期、任务、项目名" />
-              <button class="ghost">筛选</button>
-            </div>
-          </div>
-          <div class="history-sections" id="historySections"></div>
-        </section>
-
-        <section class="view billing-view" id="billingView">
-          <div class="billing-hero">
-            <h2>选择适合你的方案</h2>
-            <p>当前积分 126499，当前套餐 免费版。本月约可继续生成 1807 张 1K 图。</p>
-          </div>
-          <div class="plans">
-            <article class="plan recommended">
-              <span class="badge">推荐</span>
-              <h3>体验月卡</h3>
-              <strong>¥69/月</strong>
-              <p>适合个人快速测试工作流</p>
-              <button class="primary full">升级</button>
-              <ul>
-                <li>每月 770 积分</li>
-                <li>1K 约 192 张</li>
-                <li>支持基础编辑</li>
-              </ul>
-            </article>
-            <article class="plan">
-              <h3>设计师月卡</h3>
-              <strong>¥110/月</strong>
-              <p>适合设计师日常出图</p>
-              <button class="primary full">升级</button>
-              <ul>
-                <li>每月 1230 积分</li>
-                <li>1K 约 307 张</li>
-                <li>支持版本管理</li>
-              </ul>
-            </article>
-            <article class="plan">
-              <h3>工作室月卡</h3>
-              <strong>¥518/月</strong>
-              <p>适合多人协作和批量方案</p>
-              <button class="primary full">升级</button>
-              <ul>
-                <li>每月 5850 积分</li>
-                <li>1K 约 1462 张</li>
-                <li>成员与积分分配</li>
-              </ul>
-            </article>
-          </div>
-        </section>
-      </main>
-    </div>
-
-    <div class="modal-backdrop" id="accountModal" hidden>
-      <section class="account-modal">
-        <button class="close" id="closeAccount">×</button>
-        <aside>
-          <h3>主账号信息</h3>
-          <div class="info-row"><span>剩余积分</span><strong>126,499</strong></div>
-          <h3>企业账号</h3>
-          <div class="info-row"><span>可用人数</span><strong>0 人</strong></div>
-          <div class="info-row"><span>套餐类型</span><strong>免费版</strong></div>
-        </aside>
-        <main>
-          <h3>分账号管理</h3>
-          <button class="primary small">添加分账号</button>
-          <div class="empty-table">暂无分账号，可添加成员并分配积分。</div>
-          <h3>发票信息</h3>
-          <div class="invoice">
-            <span>公司名称：无锡松湖科技有限公司</span>
-            <span>开票电话：13338152558</span>
-          </div>
-        </main>
+        <footer class="prompt" id="promptbar"><div class="settings"><label>画幅 <select><option>Auto</option><option>16:9</option><option>4:3</option></select></label><label>分辨率 <select><option>1K</option><option>2K</option><option>4K</option></select></label><label>批量 <select><option>4 张</option><option>1 张</option><option>8 张</option></select></label><label>任务 <select><option>SU 转效果图</option><option>平面布局</option><option>材料排版</option></select></label></div><div class="prompt-row"><textarea>现代自然风客厅，保留原始空间结构，木饰面背景墙，柔和无主灯，浅灰石材地面，适合高端住宅展示。</textarea><button class="btn">自定义预设</button><button class="primary" id="generateBtn">生成（消耗：70分）</button></div></footer>
       </section>
-    </div>
-
-    <script src="./script.js"></script>
-  </body>
+      <section class="view module" id="materials"><div class="module-head"><div><h2>物料中心</h2><p>选择物料后可加入提示词，也可在图片编辑中用于材质替换。</p></div><div class="actions"><input placeholder="搜索石材、木饰面、玻璃、皮革"><button class="primary small">加入当前提示词</button></div></div><div class="materials" id="materialGrid"></div></section>
+      <section class="view module" id="history"><div class="module-head"><div><h2>历史记录</h2><p>按项目、任务和日期回溯结果，支持继续编辑和基于图片再生成。</p></div><div class="actions"><input placeholder="搜索日期、任务、项目名"><button class="btn">筛选</button></div></div><div class="history" id="historyGrid"></div></section>
+      <section class="view module" id="billing"><div class="billing-hero"><h2>选择适合你的方案</h2><p>当前积分 126499，当前套餐 免费版。本月约可继续生成 1807 张 1K 图。</p></div><div class="plans"><article class="plan reco"><span class="badge">推荐</span><h3>体验月卡</h3><strong>¥69/月</strong><p>适合个人快速测试工作流</p><button class="primary full">升级</button><ul><li>每月 770 积分</li><li>1K 约 192 张</li><li>支持基础编辑</li></ul></article><article class="plan"><h3>设计师月卡</h3><strong>¥110/月</strong><p>适合设计师日常出图</p><button class="primary full">升级</button><ul><li>每月 1230 积分</li><li>1K 约 307 张</li><li>支持版本管理</li></ul></article><article class="plan"><h3>工作室月卡</h3><strong>¥518/月</strong><p>适合多人协作和批量方案</p><button class="primary full">升级</button><ul><li>每月 5850 积分</li><li>1K 约 1462 张</li><li>成员与积分分配</li></ul></article></div></section>
+    </main>
+  </div>
+  <div class="modal-bg" id="accountModal" hidden><section class="modal"><button class="close" id="closeAccount">×</button><aside><h3>主账号信息</h3><p class="muted">主账号剩余积分：<b style="color:var(--green)">126,499</b></p><h3>企业账号</h3><p class="muted">可用人数：0 人</p><p class="muted">套餐类型：免费版</p></aside><main><h3>分账号管理</h3><button class="primary small">添加分账号</button><p class="muted">暂无分账号，可添加成员并分配积分。</p><h3>发票信息</h3><p class="muted">公司名称：无锡松湖科技有限公司<br>开票电话：13338152558</p></main></section></div>
+  <script>
+    const resultImages=[
+      {title:"方案 A / 现代自然客厅",task:"SU 转效果图",src:"https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=1200&q=85"},
+      {title:"方案 B / 木饰面会客区",task:"建筑渲染",src:"https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=1200&q=85"},
+      {title:"方案 C / 暖色商业空间",task:"灯光氛围",src:"https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1200&q=85"},
+      {title:"方案 D / 度假建筑立面",task:"建筑渲染",src:"https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=85"}
+    ];
+    const views={workspace:document.getElementById("workspace"),materials:document.getElementById("materials"),history:document.getElementById("history"),billing:document.getElementById("billing")};
+    const title=document.getElementById("pageTitle"),crumb=document.getElementById("crumb"),resultGrid=document.getElementById("resultGrid"),emptyState=document.getElementById("emptyState"),generationMode=document.getElementById("generationMode"),editorMode=document.getElementById("editorMode"),promptbar=document.getElementById("promptbar"),selectedImage=document.getElementById("selectedImage"),selectedTitle=document.getElementById("selectedTitle");
+    function closeEditor(){generationMode.hidden=false;editorMode.hidden=true;promptbar.hidden=false;if(views.workspace.classList.contains("active")){title.textContent="生成模式";crumb.textContent="资源中心 / AI 工作台"}}
+    function setView(name){closeEditor();Object.entries(views).forEach(([k,v])=>v.classList.toggle("active",k===name));document.querySelectorAll("[data-view]").forEach(b=>b.classList.toggle("active",b.dataset.view===name));const names={workspace:"生成模式",materials:"物料中心",history:"历史记录",billing:"积分套餐"};title.textContent=names[name];crumb.textContent=name==="workspace"?"资源中心 / AI 工作台":"资源中心 / "+names[name]}
+    function renderResults(){resultGrid.innerHTML=resultImages.map((i,n)=>`<article class="card" data-index="${n}"><img src="${i.src}" alt="${i.title}"><div class="hover"><span class="chip">预览</span><span class="chip">收藏</span><span class="chip">下载</span></div><footer><b>${i.title}</b><span class="chip">${i.task}</span></footer></article>`).join("");resultGrid.hidden=false;emptyState.hidden=true}
+    function openEditor(index){const item=resultImages[index];selectedImage.src=item.src;selectedTitle.textContent=item.title;generationMode.hidden=true;editorMode.hidden=false;promptbar.hidden=true;title.textContent="图片编辑模式";crumb.textContent="资源中心 / 生成结果 / 图片编辑"}
+    document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>setView(b.dataset.view));document.getElementById("generateBtn").onclick=renderResults;resultGrid.onclick=e=>{const card=e.target.closest(".card");if(card)openEditor(+card.dataset.index)};document.getElementById("backToResults").onclick=closeEditor;
+    document.querySelectorAll(".tool").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tool").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById("activeTool").textContent=b.textContent});
+    document.getElementById("openAccount").onclick=()=>document.getElementById("accountModal").hidden=false;document.getElementById("closeAccount").onclick=()=>document.getElementById("accountModal").hidden=true;document.getElementById("accountModal").onclick=e=>{if(e.target.id==="accountModal")e.currentTarget.hidden=true};
+    const matNames=["石材","木饰面","玻璃","软装","墙地面","全屋定制"];document.getElementById("materialGrid").innerHTML=matNames.map((g,gi)=>`<section class="mat-section"><h3>${g}（双击展开）</h3><div class="mat-grid">${resultImages.slice(0,3).map((i,n)=>`<article class="mat"><img src="${resultImages[(gi+n)%4].src}"><div><b>${g}_${n+1}</b><br><span class="muted">引用 / 收藏</span></div></article>`).join("")}</div></section>`).join("");
+    document.getElementById("historyGrid").innerHTML=["2026-06-25","2026-06-24","2026-06-23"].map(d=>`<section><div class="date"><h3>${d}</h3><button class="btn small">批量管理</button></div><div class="hist-grid">${resultImages.map(i=>`<article class="hist"><img src="${i.src}"><div><b>${i.task}</b><br><span class="muted">继续编辑 / 再生成</span></div></article>`).join("")}</div></section>`).join("");
+    renderResults();
+  </script>
+</body>
 </html>
